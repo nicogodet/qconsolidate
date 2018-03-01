@@ -1,83 +1,88 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
-#
-# QConsolidate
-# ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
-#
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
-#
-# This source is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free
-# Software Foundation, either version 2 of the License, or (at your option)
-# any later version.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-# details.
-#
-# A copy of the GNU General Public License is available on the World Wide Web
-# at <http://www.gnu.org/licenses/>. You can also obtain it by writing
-# to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
-# MA 02110-1335 USA.
-#
-#******************************************************************************
+"""
+***************************************************************************
+    aboutdialog.py
+    ---------------------
+    Date                 : January 2018
+    Copyright            : (C) 2018 by Alexander Bruy
+    Email                : alexander dot bruy at gmail dot com
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
 
+__author__ = 'Alexander Bruy'
+__date__ = 'January 2018'
+__copyright__ = '(C) 2018, Alexander Bruy'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
 
 import os
-import ConfigParser
+import configparser
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt import uic
+from qgis.PyQt.QtGui import QTextDocument, QPixmap, QDesktopServices
+from qgis.PyQt.QtCore import QUrl
+from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
 
-from ui.ui_aboutdialogbase import Ui_Dialog
+from qgis.core import QgsApplication
 
-import resources_rc
+pluginPath = os.path.split(os.path.dirname(__file__))[0]
+WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, "ui", "aboutdialogbase.ui"))
 
 
-class AboutDialog(QDialog, Ui_Dialog):
-    def __init__(self):
-        QDialog.__init__(self)
+class AboutDialog(BASE, WIDGET):
+    def __init__(self, parent=None):
+        super(AboutDialog, self).__init__(parent)
         self.setupUi(self)
 
-        self.btnHelp = self.buttonBox.button(QDialogButtonBox.Help)
+        cfg = configparser.ConfigParser()
+        cfg.read(os.path.join(pluginPath, "metadata.txt"))
+        name = cfg["general"]["name"]
+        about = cfg["general"]["about"]
+        version = cfg["general"]["version"]
+        icon = cfg["general"]["icon"]
+        author = cfg["general"]["author"]
+        self.home = cfg["general"]["homepage"]
+        bugs = cfg["general"]["tracker"]
 
-        self.lblLogo.setPixmap(QPixmap(":/icons/qconsolidate.png"))
+        self.setWindowTitle(self.tr("About {}".format(name)))
+        self.lblName.setText("<h1>{}</h1>".format(name))
 
-        cfg = ConfigParser.SafeConfigParser()
-        cfg.read(os.path.join(os.path.dirname(__file__), "metadata.txt"))
-        version = cfg.get("general", "version")
+        self.lblLogo.setPixmap(QPixmap(os.path.join(pluginPath, *icon.split("/"))))
+        self.lblVersion.setText(self.tr("Version: {}".format(version)))
 
-        self.lblVersion.setText(self.tr("Version: %s") % (version))
         doc = QTextDocument()
-        doc.setHtml(self.getAboutText())
+        doc.setHtml(self.aboutText(about, author, self.home, bugs))
         self.textBrowser.setDocument(doc)
         self.textBrowser.setOpenExternalLinks(True)
 
         self.buttonBox.helpRequested.connect(self.openHelp)
 
-    def reject(self):
-        QDialog.reject(self)
-
     def openHelp(self):
-        overrideLocale = bool(QSettings().value("locale/overrideFlag", False))
-        if not overrideLocale:
-            localeFullName = QLocale.system().name()
-        else:
-            localeFullName = QSettings().value("locale/userLocale", "")
+        locale = QgsApplication.locale()
 
-        localeShortName = localeFullName[0:2]
-        if localeShortName in ["ru", "uk"]:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qconsolidate/wiki"))
+        if locale in ["uk"]:
+            QDesktopServices.openUrl(
+                QUrl(self.home))
         else:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qconsolidate/wiki"))
+            QDesktopServices.openUrl(
+                QUrl(self.home))
 
-    def getAboutText(self):
-        return self.tr("""<p>Consolidates all layers from current QGIS project into one directory.</p>
-    <p><strong>Developers</strong>: Alexander Bruy</p>
-    <p><strong>Homepage</strong>: <a href="http://hub.qgis.org/projects/qconsolidate">http://hub.qgis.org/projects/qconsolidate</a></p>
-    <p>Please report bugs at <a href="http://hub.qgis.org/projects/qconsolidate/issues">bugtracker</a>.</p>
-    """)
+    def aboutText(self, about, author, home, bugs):
+        return self.tr(
+            "<p>{description}</p>"
+            "<p><strong>Developers</strong>: {developer}</p>"
+            "<p><strong>Homepage</strong>: <a href='{homepage}'>{homepage}</a></p>"
+            "<p>Please report bugs at <a href='{bugtracker}'>bugtracker</a>.</p>".format(description=about,
+                                                                                         developer=author,
+                                                                                         homepage=home,
+                                                                                         bugtracker=bugs))
