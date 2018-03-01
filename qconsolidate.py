@@ -1,30 +1,29 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
-#
-# QConsolidate
-# ---------------------------------------------------------
-# Consolidates all layers from current QGIS project into one directory and
-# creates copy of current project using this consolidated layers.
-#
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
-#
-# This source is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free
-# Software Foundation, either version 2 of the License, or (at your option)
-# any later version.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-# details.
-#
-# A copy of the GNU General Public License is available on the World Wide Web
-# at <http://www.gnu.org/licenses/>. You can also obtain it by writing
-# to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
-# MA 02110-1335 USA.
-#
-#******************************************************************************
+"""
+***************************************************************************
+    qconsolidateplugin.py
+    ---------------------
+    Date                 : February 2012
+    Copyright            : (C) 2012-2018 by Alexander Bruy
+    Email                : alexander dot bruy at gmail dot com
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
+
+__author__ = 'Alexander Bruy'
+__date__ = 'February 2012'
+__copyright__ = '(C) 2012-2018, Alexander Bruy'
+
+# This will get replaced with a git SHA1 when you do a git archive
+
+__revision__ = '$Format:%H$'
 
 
 from PyQt4.QtCore import *
