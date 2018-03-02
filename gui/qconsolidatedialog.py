@@ -25,124 +25,98 @@ __copyright__ = '(C) 2012-2018, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
+import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtXml import *
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
 
-from qgis.core import *
-from qgis.gui import *
+from qgis.core import QgsSettings
+from qgis.gui import QgsFileWidget
 
-import consolidatethread
-from ui.ui_qconsolidatedialogbase import Ui_QConsolidateDialog
+pluginPath = os.path.split(os.path.dirname(__file__))[0]
+WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, 'ui', 'photo2shapedialogbase.ui'))
 
 
-class QConsolidateDialog(QDialog, Ui_QConsolidateDialog):
-    def __init__(self, iface):
-        QDialog.__init__(self)
+class QConsolidateDialog(BASE, WIDGET):
+    def __init__(self, parent=None):
+        super(QConsolidateDialog, self).__init__(parent)
         self.setupUi(self)
-        self.iface = iface
 
-        self.workThread = None
+        self.settings = QgsSettings("alexbruy", "qconsolidate")
+
+        self.fwOutputDirectory.setStorageMode(QgsFileWidget.GetDirectory)
+        self.fwOutputDirectory.setDialogTitle(self.tr("Select directory"))
+        self.fwOutputDirectory.setDefaultRoot(self.settings.value("lastDirectory", os.path.expanduser("~"), str))
+        self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
-        self.btnBrowse.clicked.connect(self.setOutDirectory)
-
-    def setOutDirectory(self):
-        outDir = QFileDialog.getExistingDirectory(self,
-                                                  self.tr("Select output directory"),
-                                                  "."
-                                                 )
-        if not outDir:
-            return
-
-        self.leOutputDir.setText(outDir)
-
-    def accept(self):
-        outputDir = self.leOutputDir.text()
-        if not outputDir:
-            QMessageBox.warning(self,
-                                self.tr("QConsolidate: Error"),
-                                self.tr("Output directory is not set. Please specify output directory.")
-                               )
-            return
-
-        # create directory for layers if not exists
-        d = QDir(outputDir)
-        if d.exists("layers"):
-            res = QMessageBox.question(self,
-                                       self.tr("Directory exists"),
-                                       self.tr("Output directory already contains 'layers' subdirectory. " +
-                                               "Maybe this directory was used to consolidate another project. Continue?"),
-                                       QMessageBox.Yes | QMessageBox.No
-                                      )
-            if res == QMessageBox.No:
-                return
-        else:
-            if not d.mkdir("layers"):
-                QMessageBox.warning(self,
-                                    self.tr("QConsolidate: Error"),
-                                    self.tr("Can't create directory for layers.")
-                                   )
-                return
-
-        # copy project file
-        projectFile = QgsProject.instance().fileName()
-        f = QFile(projectFile)
-        newProjectFile = outputDir + "/" + QFileInfo(projectFile).fileName()
-        f.copy(newProjectFile)
-
-        # start consolidate thread that does all real work
-        self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
-        self.workThread.rangeChanged.connect(self.setProgressRange)
-        self.workThread.updateProgress.connect(self.updateProgress)
-        self.workThread.processFinished.connect(self.processFinished)
-        self.workThread.processInterrupted.connect(self.processInterrupted)
-        self.workThread.processError.connect(self.processError)
-
-        self.btnClose.setText(self.tr("Cancel"))
-        self.buttonBox.rejected.disconnect(self.reject)
-        self.btnClose.clicked.connect(self.stopProcessing)
-
-        self.workThread.start()
+    def updateOutputDirectory(self, dirPath):
+        self.fwOutputDirectory.setDefaultRoot(dirPath)
+        self.settings.setValue("lastDirectory", os.path.dirname(dirPath))
 
     def reject(self):
+        self._saveSettings()
         QDialog.reject(self)
 
-    def setProgressRange(self, maxValue):
-        self.progressBar.setRange(0, maxValue)
+    def accept(self):
+        self._saveSettings()
+
+        dirName = self.fwOutputDirectory.filePath()
+        if dirName == "":
+            iface.messageBar().pushWarning(
+                self.tr("Path is not set"),
+                self.tr("Output directory is not set. Please specify output "
+                        "directory and try again."))
+            return
+
+        #~ # create directory for layers if not exists
+        #~ d = QDir(outputDir)
+        #~ if d.exists("layers"):
+            #~ res = QMessageBox.question(self,
+                                       #~ self.tr("Directory exists"),
+                                       #~ self.tr("Output directory already contains 'layers' subdirectory. " +
+                                               #~ "Maybe this directory was used to consolidate another project. Continue?"),
+                                       #~ QMessageBox.Yes | QMessageBox.No
+                                      #~ )
+            #~ if res == QMessageBox.No:
+                #~ return
+        #~ else:
+            #~ if not d.mkdir("layers"):
+                #~ QMessageBox.warning(self,
+                                    #~ self.tr("QConsolidate: Error"),
+                                    #~ self.tr("Can't create directory for layers.")
+                                   #~ )
+                #~ return
+
+        #~ # copy project file
+        #~ projectFile = QgsProject.instance().fileName()
+        #~ f = QFile(projectFile)
+        #~ newProjectFile = outputDir + "/" + QFileInfo(projectFile).fileName()
+        #~ f.copy(newProjectFile)
+
+        #~ # start consolidate thread that does all real work
+        #~ self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
+        #~ self.workThread.rangeChanged.connect(self.setProgressRange)
+        #~ self.workThread.updateProgress.connect(self.updateProgress)
+        #~ self.workThread.processFinished.connect(self.processFinished)
+        #~ self.workThread.processInterrupted.connect(self.processInterrupted)
+        #~ self.workThread.processError.connect(self.processError)
+
+        #~ self.btnClose.setText(self.tr("Cancel"))
+        #~ self.buttonBox.rejected.disconnect(self.reject)
+        #~ self.btnClose.clicked.connect(self.stopProcessing)
+
+        #~ self.workThread.start()
+
+    def updateProgress(self, value):
+        self.progressBar.setValue(value)
+
+    def logMessage(self, message, level=Qgis.Info):
+        QgsMessageLog.logMessage(message, "Photo2Shape", level)
+
+    def _restoreGui(self):
         self.progressBar.setValue(0)
-
-    def updateProgress(self):
-        self.progressBar.setValue(self.progressBar.value() + 1)
-
-    def processFinished(self):
-        self.stopProcessing()
-        self.restoreGui()
-
-    def processInterrupted(self):
-        self.restoreGui()
-
-    def processError(self, message):
-        QMessageBox.warning(self,
-                            self.tr("QConsolidate: Error"),
-                            message
-                           )
-        self.restoreGui()
-        return
-
-    def stopProcessing(self):
-        if self.workThread is not None:
-            self.workThread.stop()
-            self.workThread = None
-
-    def restoreGui(self):
-        self.progressBar.setRange(0, 1)
-        self.progressBar.setValue(0)
-
-        QApplication.restoreOverrideCursor()
-        self.buttonBox.rejected.connect(self.reject)
-        self.btnClose.setText(self.tr("Close"))
         self.btnOk.setEnabled(True)
+        self.btnClose.setEnabled(True)
