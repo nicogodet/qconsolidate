@@ -31,10 +31,10 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
 
 from qgis.core import QgsSettings
-from qgis.gui import QgsFileWidget
+from qgis.gui import QgsGui, QgsFileWidget
 
 pluginPath = os.path.split(os.path.dirname(__file__))[0]
-WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, 'ui', 'photo2shapedialogbase.ui'))
+WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, "ui", "qconsolidatedialogbase.ui"))
 
 
 class QConsolidateDialog(BASE, WIDGET):
@@ -42,11 +42,11 @@ class QConsolidateDialog(BASE, WIDGET):
         super(QConsolidateDialog, self).__init__(parent)
         self.setupUi(self)
 
-        self.settings = QgsSettings("alexbruy", "qconsolidate")
+        QgsGui.instance().enableAutoGeometryRestore(self)
 
         self.fwOutputDirectory.setStorageMode(QgsFileWidget.GetDirectory)
         self.fwOutputDirectory.setDialogTitle(self.tr("Select directory"))
-        self.fwOutputDirectory.setDefaultRoot(self.settings.value("lastDirectory", os.path.expanduser("~"), str))
+        self.fwOutputDirectory.setDefaultRoot(QgsSettings().value("qconsolidat/lastDirectory", os.path.expanduser("~"), str))
         self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
@@ -54,10 +54,9 @@ class QConsolidateDialog(BASE, WIDGET):
 
     def updateOutputDirectory(self, dirPath):
         self.fwOutputDirectory.setDefaultRoot(dirPath)
-        self.settings.setValue("lastDirectory", os.path.dirname(dirPath))
+        QgsSettings().setValue("qconsolidate/lastDirectory", os.path.dirname(dirPath))
 
     def reject(self):
-        self._saveSettings()
         QDialog.reject(self)
 
     def accept(self):
@@ -114,7 +113,7 @@ class QConsolidateDialog(BASE, WIDGET):
         self.progressBar.setValue(value)
 
     def logMessage(self, message, level=Qgis.Info):
-        QgsMessageLog.logMessage(message, "Photo2Shape", level)
+        QgsMessageLog.logMessage(message, "QConsolidate", level)
 
     def _restoreGui(self):
         self.progressBar.setValue(0)
