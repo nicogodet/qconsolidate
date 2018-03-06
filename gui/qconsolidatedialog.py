@@ -60,8 +60,6 @@ class QConsolidateDialog(BASE, WIDGET):
         QDialog.reject(self)
 
     def accept(self):
-        self._saveSettings()
-
         dirName = self.fwOutputDirectory.filePath()
         if dirName == "":
             iface.messageBar().pushWarning(
@@ -69,53 +67,3 @@ class QConsolidateDialog(BASE, WIDGET):
                 self.tr("Output directory is not set. Please specify output "
                         "directory and try again."))
             return
-
-        #~ # create directory for layers if not exists
-        #~ d = QDir(outputDir)
-        #~ if d.exists("layers"):
-            #~ res = QMessageBox.question(self,
-                                       #~ self.tr("Directory exists"),
-                                       #~ self.tr("Output directory already contains 'layers' subdirectory. " +
-                                               #~ "Maybe this directory was used to consolidate another project. Continue?"),
-                                       #~ QMessageBox.Yes | QMessageBox.No
-                                      #~ )
-            #~ if res == QMessageBox.No:
-                #~ return
-        #~ else:
-            #~ if not d.mkdir("layers"):
-                #~ QMessageBox.warning(self,
-                                    #~ self.tr("QConsolidate: Error"),
-                                    #~ self.tr("Can't create directory for layers.")
-                                   #~ )
-                #~ return
-
-        #~ # copy project file
-        #~ projectFile = QgsProject.instance().fileName()
-        #~ f = QFile(projectFile)
-        #~ newProjectFile = outputDir + "/" + QFileInfo(projectFile).fileName()
-        #~ f.copy(newProjectFile)
-
-        #~ # start consolidate thread that does all real work
-        #~ self.workThread = consolidatethread.ConsolidateThread(self.iface, outputDir, newProjectFile)
-        #~ self.workThread.rangeChanged.connect(self.setProgressRange)
-        #~ self.workThread.updateProgress.connect(self.updateProgress)
-        #~ self.workThread.processFinished.connect(self.processFinished)
-        #~ self.workThread.processInterrupted.connect(self.processInterrupted)
-        #~ self.workThread.processError.connect(self.processError)
-
-        #~ self.btnClose.setText(self.tr("Cancel"))
-        #~ self.buttonBox.rejected.disconnect(self.reject)
-        #~ self.btnClose.clicked.connect(self.stopProcessing)
-
-        #~ self.workThread.start()
-
-    def updateProgress(self, value):
-        self.progressBar.setValue(value)
-
-    def logMessage(self, message, level=Qgis.Info):
-        QgsMessageLog.logMessage(message, "QConsolidate", level)
-
-    def _restoreGui(self):
-        self.progressBar.setValue(0)
-        self.btnOk.setEnabled(True)
-        self.btnClose.setEnabled(True)
