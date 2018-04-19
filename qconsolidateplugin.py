@@ -39,7 +39,7 @@ from qconsolidate.gui.aboutdialog import AboutDialog
 pluginPath = os.path.dirname(__file__)
 
 
-class QConsolidatePluginPlugin:
+class QConsolidatePlugin:
     def __init__(self, iface):
         self.iface = iface
 
