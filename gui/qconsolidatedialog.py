@@ -49,21 +49,15 @@ class QConsolidateDialog(BASE, WIDGET):
         self.fwOutputDirectory.setDefaultRoot(QgsSettings().value("qconsolidat/lastDirectory", os.path.expanduser("~"), str))
         self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
 
-        self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
-        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
+        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
-    def updateOutputDirectory(self, dirPath):
-        self.fwOutputDirectory.setDefaultRoot(dirPath)
-        QgsSettings().setValue("qconsolidate/lastDirectory", os.path.dirname(dirPath))
+    def updateOutputDirectory(self, filePath):
+        self.fwOutputDirectory.setDefaultRoot(filePath)
+        QgsSettings().setValue("qconsolidate/lastDirectory", os.path.dirname(filePath))
+        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(filePath != "")
 
     def reject(self):
         QDialog.reject(self)
 
     def accept(self):
-        dirName = self.fwOutputDirectory.filePath()
-        if dirName == "":
-            iface.messageBar().pushWarning(
-                self.tr("Path is not set"),
-                self.tr("Output directory is not set. Please specify output "
-                        "directory and try again."))
-            return
+        QDialog.accept()

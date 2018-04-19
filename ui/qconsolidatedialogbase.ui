@@ -7,29 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>116</height>
+    <height>110</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>QConsolidate</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Output directory</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <widget class="QgsFileWidget" name="fwOutputDirectory" native="true"/>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QProgressBar" name="progressBar">
-     <property name="value">
-      <number>0</number>
-     </property>
-    </widget>
    </item>
    <item row="3" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -41,6 +27,9 @@
      </property>
     </widget>
    </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="cmbMethod"/>
+   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
@@ -48,8 +37,18 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="cmbConsolidateMethod"/>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Output directory</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QStackedWidget" name="stackedWidget">
+     <widget class="QWidget" name="page"/>
+     <widget class="QWidget" name="page_2"/>
+    </widget>
    </item>
   </layout>
  </widget>

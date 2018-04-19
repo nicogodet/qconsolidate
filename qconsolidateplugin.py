@@ -25,7 +25,6 @@ __copyright__ = '(C) 2012-2018, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
-
 import os
 
 from qgis.PyQt.QtCore import QCoreApplication, QTranslator
