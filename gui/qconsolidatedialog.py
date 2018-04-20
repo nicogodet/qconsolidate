@@ -34,7 +34,7 @@ from qgis.core import QgsSettings
 from qgis.gui import QgsGui, QgsFileWidget
 
 pluginPath = os.path.split(os.path.dirname(__file__))[0]
-WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, "ui", "qconsolidatedialogbase.ui"))
+WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, 'ui', 'qconsolidatedialogbase.ui'))
 
 
 class QConsolidateDialog(BASE, WIDGET):
@@ -44,17 +44,18 @@ class QConsolidateDialog(BASE, WIDGET):
 
         QgsGui.instance().enableAutoGeometryRestore(self)
 
+        settings = QgsSettings()
         self.fwOutputDirectory.setStorageMode(QgsFileWidget.GetDirectory)
-        self.fwOutputDirectory.setDialogTitle(self.tr("Select directory"))
-        self.fwOutputDirectory.setDefaultRoot(QgsSettings().value("qconsolidate/lastDirectory", os.path.expanduser("~"), str))
+        self.fwOutputDirectory.setDialogTitle(self.tr('Select directory'))
+        self.fwOutputDirectory.setDefaultRoot(settings.value('qconsolidate/lastDirectory', os.path.expanduser('~'), str))
         self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
 
         self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def updateOutputDirectory(self, filePath):
         self.fwOutputDirectory.setDefaultRoot(filePath)
-        QgsSettings().setValue("qconsolidate/lastDirectory", os.path.dirname(filePath))
-        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(filePath != "")
+        QgsSettings().setValue('qconsolidate/lastDirectory', os.path.dirname(filePath))
+        self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(filePath != '')
 
     def reject(self):
         QDialog.reject(self)

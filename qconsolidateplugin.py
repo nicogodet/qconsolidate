@@ -44,7 +44,7 @@ class QConsolidatePlugin:
         self.iface = iface
 
         locale = QgsApplication.locale()
-        qmPath = "{}/i18n/qconsolidate_{}.qm".format(pluginPath, locale)
+        qmPath = '{}/i18n/qconsolidate_{}.qm'.format(pluginPath, locale)
 
         if os.path.exists(qmPath):
             self.translator = QTranslator()
@@ -52,24 +52,24 @@ class QConsolidatePlugin:
             QCoreApplication.installTranslator(self.translator)
 
     def initGui(self):
-        self.actionRun = QAction(self.tr("QConsolidate"), self.iface.mainWindow())
-        self.actionRun.setIcon(QIcon(os.path.join(pluginPath, "icons", "qconsolidate.svg")))
-        self.actionRun.setObjectName("runQConsolidate")
+        self.actionRun = QAction(self.tr('QConsolidate'), self.iface.mainWindow())
+        self.actionRun.setIcon(QIcon(os.path.join(pluginPath, 'icons', 'qconsolidate.svg')))
+        self.actionRun.setObjectName('runQConsolidate')
 
-        self.actionAbout = QAction(self.tr("About QConsolidate…"), self.iface.mainWindow())
-        self.actionAbout.setIcon(QgsApplication.getThemeIcon("/mActionHelpContents.svg"))
-        self.actionRun.setObjectName("aboutQConsolidate")
+        self.actionAbout = QAction(self.tr('About QConsolidate…'), self.iface.mainWindow())
+        self.actionAbout.setIcon(QgsApplication.getThemeIcon('/mActionHelpContents.svg'))
+        self.actionRun.setObjectName('aboutQConsolidate')
 
-        self.iface.addPluginToMenu(self.tr("QConsolidate"), self.actionRun)
-        self.iface.addPluginToMenu(self.tr("QConsolidate"), self.actionAbout)
+        self.iface.addPluginToMenu(self.tr('QConsolidate'), self.actionRun)
+        self.iface.addPluginToMenu(self.tr('QConsolidate'), self.actionAbout)
         self.iface.addToolBarIcon(self.actionRun)
 
         self.actionRun.triggered.connect(self.run)
         self.actionAbout.triggered.connect(self.about)
 
     def unload(self):
-        self.iface.removePluginMenu(self.tr("QConsolidate"), self.actionRun)
-        self.iface.removePluginMenu(self.tr("QConsolidate"), self.actionAbout)
+        self.iface.removePluginMenu(self.tr('QConsolidate'), self.actionRun)
+        self.iface.removePluginMenu(self.tr('QConsolidate'), self.actionAbout)
         self.iface.removeToolBarIcon(self.actionRun)
 
     def run(self):
@@ -82,4 +82,4 @@ class QConsolidatePlugin:
         d.exec_()
 
     def tr(self, text):
-        return QCoreApplication.translate("QConsolidate", text)
+        return QCoreApplication.translate('QConsolidate', text)
