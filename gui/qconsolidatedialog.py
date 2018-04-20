@@ -46,7 +46,7 @@ class QConsolidateDialog(BASE, WIDGET):
 
         self.fwOutputDirectory.setStorageMode(QgsFileWidget.GetDirectory)
         self.fwOutputDirectory.setDialogTitle(self.tr("Select directory"))
-        self.fwOutputDirectory.setDefaultRoot(QgsSettings().value("qconsolidat/lastDirectory", os.path.expanduser("~"), str))
+        self.fwOutputDirectory.setDefaultRoot(QgsSettings().value("qconsolidate/lastDirectory", os.path.expanduser("~"), str))
         self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
 
         self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
