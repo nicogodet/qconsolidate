@@ -33,6 +33,8 @@ from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
 from qgis.core import QgsSettings
 from qgis.gui import QgsGui, QgsFileWidget
 
+from qconsolidate.writers import writersRegistry
+
 pluginPath = os.path.split(os.path.dirname(__file__))[0]
 WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, 'ui', 'qconsolidatedialogbase.ui'))
 
@@ -47,18 +49,49 @@ class QConsolidateDialog(BASE, WIDGET):
         settings = QgsSettings()
         self.fwOutputDirectory.setStorageMode(QgsFileWidget.GetDirectory)
         self.fwOutputDirectory.setDialogTitle(self.tr('Select directory'))
-        self.fwOutputDirectory.setDefaultRoot(settings.value('qconsolidate/lastDirectory', os.path.expanduser('~'), str))
+        self.fwOutputDirectory.setDefaultRoot(settings.value('qconsolidate/lastOutputDirectory', os.path.expanduser('~'), str))
         self.fwOutputDirectory.fileChanged.connect(self.updateOutputDirectory)
+
+        for writer in sorted(writersRegistry.keys()):
+            self.cmbWriter.addItem(writersRegistry[writer].displayName(), writer)
+            self.stackedWidget.addWidget(writersRegistry[writer].widget())
+
+        writer = QgsSettings().value('qconsolidate/writer', 'copydirectory', str)
+        idx = self.cmbWriter.findData(writer)
+        self.cmbWriter.setCurrentIndex(idx)
+        self.stackedWidget.setCurrentIndex(idx)
+        self.cmbWriter.currentIndexChanged.connect(self.writerChanged)
 
         self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def updateOutputDirectory(self, filePath):
         self.fwOutputDirectory.setDefaultRoot(filePath)
-        QgsSettings().setValue('qconsolidate/lastDirectory', os.path.dirname(filePath))
+        QgsSettings().setValue('qconsolidate/lastOutputDirectory', os.path.dirname(filePath))
         self.buttonBox.button(QDialogButtonBox.Ok).setEnabled(filePath != '')
+
+    def writerChanged(self, index):
+        self.stackedWidget.setCurrentIndex(index)
 
     def reject(self):
         QDialog.reject(self)
 
     def accept(self):
-        QDialog.accept()
+        self._saveSettings()
+
+        QDialog.accept(self)
+
+    def _saveSettings(self):
+        settings = QgsSettings()
+        settings.setValue('qconsolidate/writer', self.cmbWriter.currentData())
+
+    def task(self):
+        settings = dict()
+        settings['output'] = self.fwOutputDirectory.filePath()
+        settings['exportRemote'] = self.chkExportRemote.isChecked()
+
+        widget = self.stackedWidget.currentWidget()
+        if hasattr(widget, 'settings'):
+            settings.update(widget.settings())
+
+        task = writersRegistry[self.cmbWriter.currentData()].task(settings)
+        return task

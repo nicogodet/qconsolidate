@@ -67,6 +67,8 @@ class QConsolidatePlugin:
         self.actionRun.triggered.connect(self.run)
         self.actionAbout.triggered.connect(self.about)
 
+        self.taskManager = QgsApplication.taskManager()
+
     def unload(self):
         self.iface.removePluginMenu(self.tr('QConsolidate'), self.actionRun)
         self.iface.removePluginMenu(self.tr('QConsolidate'), self.actionAbout)
@@ -74,8 +76,12 @@ class QConsolidatePlugin:
 
     def run(self):
         dlg = QConsolidateDialog()
-        dlg.show()
-        dlg.exec_()
+        if dlg.exec_():
+            task = dlg.task()
+            task.consolidateComplete.connect(self.completed)
+            task.errorOccurred.connect(self.errored)
+
+            self.taskManager.addTask(task)
 
     def about(self):
         d = AboutDialog()
@@ -83,3 +89,9 @@ class QConsolidatePlugin:
 
     def tr(self, text):
         return QCoreApplication.translate('QConsolidate', text)
+
+    def completed(self):
+        self.iface.messageBar().pushSuccess(self.tr('QConsolidate'), self.tr('Project consolidated successfully.'))
+
+    def errored(self, error):
+        self.iface.messageBar().pushWarning(self.tr('QConsolidate'), error)
