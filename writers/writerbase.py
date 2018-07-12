@@ -36,6 +36,7 @@ from qgis.PyQt.QtWidgets import QWidget
 
 from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsTask, QgsVectorFileWriter
 
+RASTER_SIZE = 2000
 
 class WriterBase:
 
@@ -170,4 +171,21 @@ class WriterTaskBase(QgsTask):
         options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
         options.fileEncoding = 'utf-8'
         error = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
-        return error
+        if error != QgsVectorFileWriter.NoError:
+            QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
+        else:
+            self._updateLayerSource(layer.id(), fileName)
+
+    def _exportRasterLayer(self, layer, fileName):
+        provider = layer.dataProvider()
+        k = float(provider.extent().width()) / float(provider.extent().height())
+
+        pipe = QgsRasterPipe()
+        if not pipe.set(provider.clone()):
+            QgsMessageLog.logMessage('Failed to process layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
+            return
+
+        writer = QgsRasterFileWriter(fileName)
+        writer.setOutputFormat('GTiff')
+        writer.writeRaster(pipe, RASTER_SIZE * k, RASTER_SIZE, provider.extent(), provider.crs())
+        self._updateLayerSource(layer.id(), fileName)

@@ -64,11 +64,7 @@ class CopyWriterTask(WriterTaskBase):
             pass
         elif providerType == 'memory':
             newFile = os.path.join(self.layersDirectory, safeLayerName)
-            error = _exportVectorLayer(layer, newFile)
-            if error != QgsVectorFileWriter.NoError:
-                QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
-            else:
-                self._updateLayerSource(layer.id(), newFile)
+            self._exportVectorLayer(layer, newFile)
         elif providerType in ('gpx', 'delimitedtext'):
             filePath = self._filePathFromUri(layer.source())
             self._copyLayerFiles(filePath, self.layersDirectory)
@@ -79,23 +75,21 @@ class CopyWriterTask(WriterTaskBase):
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
                 newFile = os.path.join(self.layersDirectory, safeLayerName)
-                error = _exportVectorLayer(layer, newFile)
-                if error != QgsVectorFileWriter.NoError:
-                    QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
-                else:
-                    self._updateLayerSource(layer.id(), newFile)
+                self._exportVectorLayer(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
     def packageRasterLayer(self, layer):
         providerType = layer.providerType()
         if providerType == 'gdal':
+            # FIXME: need to handle subdatasets
             self._copyLayerFiles(layer.source(), self.layersDirectory)
             newFile = os.path.join(self.layersDirectory, os.path.split(layer.source())[1])
             self._updateLayerSource(layer.id(), newFile)
         elif providerType == 'wms':
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                pass
+                newFile = os.path.join(self.layersDirectory, safeLayerName)
+                self._exportRasterLayer(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
