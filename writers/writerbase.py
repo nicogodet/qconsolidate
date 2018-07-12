@@ -149,9 +149,7 @@ class WriterTaskBase(QgsTask):
     def _copyLayerFiles(self, layerSource, destination):
         wildcard = '{}.*'.format(os.path.splitext(layerSource)[0])
         for fileName in glob.iglob(wildcard):
-            QgsMessageLog.logMessage('Copy {}'.format(fileName), 'QConsolidate')
-            p = shutil.copy2(fileName, destination)
-            QgsMessageLog.logMessage('New {}'.format(p), 'QConsolidate')
+            shutil.copy2(fileName, destination)
 
     def _safeName(self, layerName):
         return self.badChars.sub('', layerName).title().replace(' ', '')
