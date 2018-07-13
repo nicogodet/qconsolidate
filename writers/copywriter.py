@@ -60,21 +60,20 @@ class CopyWriterTask(WriterTaskBase):
 
         providerType = layer.providerType()
         if providerType == 'ogr':
-            # FIXME: need to handle GDAL's vsizip
-            pass
+            self._processGdalDatasource(layer)
         elif providerType == 'memory':
-            newFile = os.path.join(self.layersDirectory, safeLayerName)
+            newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
             self._exportVectorLayer(layer, newFile)
         elif providerType in ('gpx', 'delimitedtext'):
             filePath = self._filePathFromUri(layer.source())
-            self._copyLayerFiles(filePath, self.layersDirectory)
-            newFile = os.path.join(self.layersDirectory, os.path.split(filePath)[1])
+            self._copyLayerFiles(filePath, self.dstDirectory)
+            newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1])
             self._updateLayerSource(layer.id(), newFile, filePath)
         elif providerType == 'spatialite':
             pass
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                newFile = os.path.join(self.layersDirectory, safeLayerName)
+                newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
                 self._exportVectorLayer(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
@@ -82,16 +81,40 @@ class CopyWriterTask(WriterTaskBase):
     def packageRasterLayer(self, layer):
         providerType = layer.providerType()
         if providerType == 'gdal':
-            # FIXME: need to handle subdatasets
-            self._copyLayerFiles(layer.source(), self.layersDirectory)
-            newFile = os.path.join(self.layersDirectory, os.path.split(layer.source())[1])
-            self._updateLayerSource(layer.id(), newFile)
-        elif providerType == 'wms':
+            self._processGdalDatasource(layer)
+        elif providerType in 'wms':
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                newFile = os.path.join(self.layersDirectory, safeLayerName)
+                newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
                 self._exportRasterLayer(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
     def packagePluginLayer(self, layer):
         QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=layer.providerType()), 'QConsolidate')
+
+    def _processGdalDatasource(self, layer):
+        uri = layer.source()
+        filePath = layer.source()
+        newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1])
+        if uri.startswith(('/vsizip/', '/vsigzip/', '/vsitar/')):
+            m = self.gdalVsi.search(uri)
+            if m is not None:
+                prefix = m.group(1)
+                filePath = m.group(2)
+                layerPath = m.group(4)
+                newFile = '{vsi}./{dirName}/{fileName}/{layer}'.format(vsi=prefix, dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1], layer=layerPath)
+        else:
+            # ignore other virtual filesystems
+            if uri.startswith('/vsi'):
+                prefix = uri.slit('/')[0]
+                QgsMessageLog.logMessage('Not supported GDAL virtual filesystem layer "{layerType}"'.format(layerType=prefix), 'QConsolidate')
+                return
+
+            # handle multiple layers in the single dataset
+            if '|' in uri:
+                filePath = uri.split('|')[0]
+                layerPath = uri.split('|')[1]
+                newFile = './{dirName}/{fileName}|{layer}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1], layer=layerPath)
+
+        self._copyLayerFiles(filePath, self.dstDirectory)
+        self._updateLayerSource(layer.id(), newFile)

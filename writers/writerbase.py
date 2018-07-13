@@ -38,6 +38,7 @@ from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsTask, Qgs
 
 RASTER_SIZE = 2000
 
+
 class WriterBase:
 
     def name(self):
@@ -58,7 +59,10 @@ class WriterTaskBase(QgsTask):
     consolidateComplete = pyqtSignal()
     errorOccurred = pyqtSignal(str)
 
-    badChars = re.compile(r'[&:()\-\,\'\.\/] ')
+    badChars = re.compile(r'[&:\(\)\-\,\'\.\/ ]')
+    gdalVsi = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
+
+    LAYERS_DIRECTORY = 'layers'
 
     def __init__(self, settings):
         QgsTask.__init__(self, 'QConsolidate {}'.format(settings['output']))
@@ -69,19 +73,19 @@ class WriterTaskBase(QgsTask):
         self.projectFile = None
 
         self.error = ''
-        self.layersDirectory = os.path.join(self.settings['output'], 'layers')
+        self.dstDirectory = os.path.join(self.settings['output'], self.LAYERS_DIRECTORY)
 
     def run(self):
         self.packageProject()
 
-        if not os.path.isdir(self.layersDirectory):
-            os.mkdir(self.layersDirectory)
+        if not os.path.isdir(self.dstDirectory):
+            os.mkdir(self.dstDirectory)
 
         layers = QgsProject.instance().mapLayers()
         total = 100.0 / len(layers)
 
         for count, layer in enumerate(layers.values()):
-            QgsMessageLog.logMessage('Consolidating {layer}.'.format(layer.name()), 'QConsolidate', Qgis.Info)
+            QgsMessageLog.logMessage('Consolidating {layer}.'.format(layer=layer.name()), 'QConsolidate', Qgis.Info)
             if self.isCanceled():
                 break
 
@@ -139,12 +143,12 @@ class WriterTaskBase(QgsTask):
         else:
             # update layer source in the layer tree section
             element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
-            source = element.get('source')
+            source = element.get('source').lstrip('./')
             element.set('source', source.replace(oldFilePath, newSource))
 
             # update layer source in the project layers section
             element = self.project.find('./projectlayers/maplayer/[id="{}"]'.format(layerId))
-            source = element.find('datasource').text
+            source = element.find('datasource').text.lstrip('./')
             element.find('datasource').text = source.replace(oldFilePath, newSource)
 
     def _copyLayerFiles(self, layerSource, destination):
