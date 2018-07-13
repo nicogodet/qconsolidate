@@ -32,7 +32,7 @@ import xml.etree.ElementTree as ET
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QWidget
 
-from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsVectorFileWriter
+from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsVectorFileWriter, QgsDataSourceUri
 
 from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
 from qconsolidate.gui.directorywriterwidget import DirectoryWriterWidget
@@ -70,7 +70,11 @@ class CopyWriterTask(WriterTaskBase):
             newFile = './{dirName}/{fileName}?{layer}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1], layer=layerPath)
             self._updateLayerSource(layer.id(), newFile)
         elif providerType == 'spatialite':
-            pass
+            uri = QgsDataSourceUri(layer.source())
+            filePath = uri.database()
+            self._copyLayerFiles(filePath, self.dstDirectory)
+            uri.setDatabase('./{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1]))
+            self._updateLayerSource(layer.id(), uri.uri())
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
                 newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
