@@ -65,10 +65,10 @@ class CopyWriterTask(WriterTaskBase):
             newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
             self._exportVectorLayer(layer, newFile)
         elif providerType in ('gpx', 'delimitedtext'):
-            filePath = self._filePathFromUri(layer.source())
+            filePath, layerPath = self._filePathFromUri(layer.source())
             self._copyLayerFiles(filePath, self.dstDirectory)
-            newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1])
-            self._updateLayerSource(layer.id(), newFile, filePath)
+            newFile = './{dirName}/{fileName}?{layer}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1], layer=layerPath)
+            self._updateLayerSource(layer.id(), newFile)
         elif providerType == 'spatialite':
             pass
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):

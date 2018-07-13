@@ -161,13 +161,14 @@ class WriterTaskBase(QgsTask):
 
     def _filePathFromUri(self, uri):
         filePath = uri.split('?')[0]
+        layerPath = uri.split('?')[1]
         if os.name == 'nt':
             # on Windows strip 'file:///' prefix from the path
             # FIXME: need to handle special case — LAN URI
-            return filePath[8:] if filePath.startswith('file://') else filePath
+            return filePath[8:] if filePath.startswith('file://') else filePath, layerPath
         else:
             # on Linux strip 'file://' prefix from the path
-            return filePath[7:] if filePath.startswith('file://') else filePath
+            return filePath[7:] if filePath.startswith('file://') else filePath, layerPath
 
     def _exportVectorLayer(self, layer, fileName, driverName='ESRI Shapefile'):
         options = QgsVectorFileWriter.SaveVectorOptions()
