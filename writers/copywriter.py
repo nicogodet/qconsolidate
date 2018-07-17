@@ -122,3 +122,17 @@ class CopyWriterTask(WriterTaskBase):
 
         self._copyLayerFiles(filePath, self.dstDirectory)
         self._updateLayerSource(layer.id(), newFile)
+
+    def _layerTreePath(self, layer):
+        groups = []
+        root = QgsProject.instance().layerTreeRoot()
+        node = root.findLayer(layer.id())
+        while node.parent() is not None:
+            groups.append(node.parent().name())
+            node = node.parent()
+
+        if len(groups) != 1:
+            groups.reverse()
+            groups = groups[1:]
+
+        return groups
