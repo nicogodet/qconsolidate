@@ -106,7 +106,7 @@ class DirectoryWriterTask(WriterTaskBase):
         writer = QgsRasterFileWriter(fileName)
         writer.setOutputFormat('GTiff')
         writer.writeRaster(pipe, RASTER_SIZE * k, RASTER_SIZE, provider.extent(), provider.crs())
-        self._updateLayerSource(layer.id(), fileName)
+        self._updateLayerSource(layer.id(), fileName.replace(self.baseDirectory, '.'))
 
     def _layerTreePath(self, layer):
         ''' Retrieve all parent layer tree groups of the given layer

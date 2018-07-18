@@ -66,41 +66,45 @@ class CopyWriterTask(DirectoryWriterTask):
 
         providerType = layer.providerType()
         if providerType == 'ogr':
-            QgsMessageLog.logMessage(layer.name(), 'QConsolidate', Qgis.Info)
-            QgsMessageLog.logMessage(layer.source(), 'QConsolidate', Qgis.Info)
             self._processGdalDatasource(layer, destDirectory)
-        #~ elif providerType == 'memory':
-            #~ newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
-            #~ self._exportVectorLayer(layer, newFile)
-        #~ elif providerType in ('gpx', 'delimitedtext'):
-            #~ filePath, layerPath = self._filePathFromUri(layer.source())
-            #~ self._copyLayerFiles(filePath, self.dstDirectory)
-            #~ newFile = './{dirName}/{fileName}?{layer}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1], layer=layerPath)
-            #~ self._updateLayerSource(layer.id(), newFile)
-        #~ elif providerType == 'spatialite':
-            #~ uri = QgsDataSourceUri(layer.source())
-            #~ filePath = uri.database()
-            #~ self._copyLayerFiles(filePath, self.dstDirectory)
-            #~ uri.setDatabase('./{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=os.path.split(filePath)[1]))
-            #~ self._updateLayerSource(layer.id(), uri.uri())
-        #~ elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
-            #~ if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                #~ newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
-                #~ self._exportVectorLayer(layer, newFile)
+        elif providerType == 'memory':
+            newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
+            self._exportVectorLayer(layer, newFile)
+        elif providerType in ('gpx', 'delimitedtext'):
+            filePath, layerPath = self._filePathFromUri(layer.source())
+            self._copyLayerFiles(filePath, os.path.join(self.baseDirectory, destDirectory))
+            newFile = './{dirName}/{fileName}?{layer}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
+            self._updateLayerSource(layer.id(), newFile)
+        elif providerType == 'spatialite':
+            uri = QgsDataSourceUri(layer.source())
+            filePath = uri.database()
+            self._copyLayerFiles(filePath, os.path.join(self.baseDirectory, destDirectory))
+            uri.setDatabase('./{dirName}/{fileName}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1]))
+            self._updateLayerSource(layer.id(), uri.uri())
+        elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
+            if 'exportRemote' in self.settings and self.settings['exportRemote']:
+                newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
+                self._exportVectorLayer(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
     def packageRasterLayer(self, layer):
-        pass
-        #~ providerType = layer.providerType()
-        #~ if providerType == 'gdal':
-            #~ self._processGdalDatasource(layer)
-        #~ elif providerType in 'wms':
-            #~ if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                #~ newFile = './{dirName}/{fileName}'.format(dirName=self.LAYERS_DIRECTORY, fileName=safeLayerName)
-                #~ self._exportRasterLayer(layer, newFile)
-        #~ else:
-            #~ QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
+        destDirectory = self.LAYERS_DIR_NAME
+        if 'groupLayers' in self.settings and self.settings['groupLayers']:
+            destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
+            newPath = os.path.join(self.baseDirectory, destDirectory)
+            if not os.path.isdir(newPath):
+                os.makedirs(newPath)
+
+        providerType = layer.providerType()
+        if providerType == 'gdal':
+            self._processGdalDatasource(layer, destDirectory)
+        elif providerType in 'wms':
+            if 'exportRemote' in self.settings and self.settings['exportRemote']:
+                newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
+                self._exportRasterLayer(layer, newFile)
+        else:
+            QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
     def _processGdalDatasource(self, layer, destDirectory):
         uri = layer.source()
