@@ -30,6 +30,7 @@ import inspect
 from importlib import util
 
 from qconsolidate.writers.writerbase import WriterBase
+from qconsolidate.writers.directorywriter import DirectoryWriter
 
 
 def loadWriters():
@@ -42,7 +43,7 @@ def loadWriters():
             spec.loader.exec_module(module)
             for x in dir(module):
                 obj = getattr(module, x)
-                if inspect.isclass(obj) and issubclass(obj, WriterBase) and obj.__name__ != 'WriterBase':
+                if inspect.isclass(obj) and issubclass(obj, (WriterBase, DirectoryWriter)) and obj.__name__ not in ('WriterBase', 'DirectoryWriter'):
                     w = obj()
                     writersRegistry[w.name()] = w
 

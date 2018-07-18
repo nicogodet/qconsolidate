@@ -27,7 +27,6 @@ __revision__ = '$Format:%H$'
 
 import os
 import re
-import glob
 import shutil
 import xml.etree.ElementTree as ET
 
@@ -40,6 +39,9 @@ RASTER_SIZE = 2000
 
 
 class WriterBase:
+
+    def __init__(self):
+        pass
 
     def name(self):
         return 'base'
@@ -62,24 +64,25 @@ class WriterTaskBase(QgsTask):
     badChars = re.compile(r'[&:\(\)\-\,\'\.\/ ]')
     gdalVsi = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
 
-    LAYERS_DIRECTORY = 'layers'
+    LAYERS_DIR_NAME = 'layers'
 
     def __init__(self, settings):
-        QgsTask.__init__(self, 'QConsolidate {}'.format(settings['output']))
+        QgsTask.__init__(self, 'QConsolidate')
 
         self.settings = settings
 
         self.project = None
         self.projectFile = None
+        self.baseDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
 
         self.error = ''
-        self.dstDirectory = os.path.join(self.settings['output'], self.LAYERS_DIRECTORY)
 
     def run(self):
         self.packageProject()
 
-        if not os.path.isdir(self.dstDirectory):
-            os.mkdir(self.dstDirectory)
+        layersDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
+        if not os.path.isdir(layersDirectory):
+            os.mkdir(layersDirectory)
 
         layers = QgsProject.instance().mapLayers()
         total = 100.0 / len(layers)
@@ -131,66 +134,14 @@ class WriterTaskBase(QgsTask):
     def packagePluginLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
-    def _updateLayerSource(self, layerId, newSource, oldFilePath=None):
-        if oldFilePath is None:
-            # update layer source in the layer tree section.
-            element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
-            element.set('source', newSource)
+    def _updateLayerSource(self, layerId, newSource):
+        # update layer source in the layer tree section.
+        element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
+        element.set('source', newSource)
 
-            # update layer source in the project layers section
-            element = self.project.find('./projectlayers/maplayer/[id="{}"]'.format(layerId))
-            element.find('datasource').text = newSource
-        else:
-            # update layer source in the layer tree section
-            element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
-            source = element.get('source').lstrip('./')
-            element.set('source', source.replace(oldFilePath, newSource))
-
-            # update layer source in the project layers section
-            element = self.project.find('./projectlayers/maplayer/[id="{}"]'.format(layerId))
-            source = element.find('datasource').text.lstrip('./')
-            element.find('datasource').text = source.replace(oldFilePath, newSource)
-
-    def _copyLayerFiles(self, layerSource, destination):
-        wildcard = '{}.*'.format(os.path.splitext(layerSource)[0])
-        for fileName in glob.iglob(wildcard):
-            shutil.copy2(fileName, destination)
+        # update layer source in the project layers section
+        element = self.project.find('./projectlayers/maplayer/[id="{}"]'.format(layerId))
+        element.find('datasource').text = newSource
 
     def _safeName(self, layerName):
         return self.badChars.sub('', layerName).title().replace(' ', '')
-
-    def _filePathFromUri(self, uri):
-        filePath = uri.split('?')[0]
-        layerPath = uri.split('?')[1]
-        if os.name == 'nt':
-            # on Windows strip 'file:///' prefix from the path
-            # FIXME: need to handle special case — LAN URI
-            return filePath[8:] if filePath.startswith('file://') else filePath, layerPath
-        else:
-            # on Linux strip 'file://' prefix from the path
-            return filePath[7:] if filePath.startswith('file://') else filePath, layerPath
-
-    def _exportVectorLayer(self, layer, fileName, driverName='ESRI Shapefile'):
-        options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName = driverName
-        options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
-        options.fileEncoding = 'utf-8'
-        error = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
-        if error != QgsVectorFileWriter.NoError:
-            QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
-        else:
-            self._updateLayerSource(layer.id(), fileName)
-
-    def _exportRasterLayer(self, layer, fileName):
-        provider = layer.dataProvider()
-        k = float(provider.extent().width()) / float(provider.extent().height())
-
-        pipe = QgsRasterPipe()
-        if not pipe.set(provider.clone()):
-            QgsMessageLog.logMessage('Failed to process layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
-            return
-
-        writer = QgsRasterFileWriter(fileName)
-        writer.setOutputFormat('GTiff')
-        writer.writeRaster(pipe, RASTER_SIZE * k, RASTER_SIZE, provider.extent(), provider.crs())
-        self._updateLayerSource(layer.id(), fileName)
