@@ -83,7 +83,7 @@ class DirectoryWriterTask(WriterTaskBase):
         ''' Export given vector layer to the file using given format
         '''
         options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName = self.settings['driverName'] if 'driverName' in self.settings else 'GPKG'
+        options.driverName = self.settings['vectorFormat'] if 'vectorFormat' in self.settings else 'GPKG'
         options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
         options.fileEncoding = 'utf-8'
 
