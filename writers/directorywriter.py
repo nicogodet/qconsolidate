@@ -79,13 +79,20 @@ class DirectoryWriterTask(WriterTaskBase):
         for fileName in glob.iglob(wildcard):
             shutil.copy2(fileName, destDirectory)
 
-    def _exportVectorLayer(self, layer, fileName, driverName='ESRI Shapefile'):
+    def _exportVectorLayer(self, layer, fileName):
         ''' Export given vector layer to the file using given format
         '''
         options = QgsVectorFileWriter.SaveVectorOptions()
-        options.driverName = driverName
+        options.driverName = self.settings['driverName'] if 'driverName' in self.settings else 'GPKG'
         options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
         options.fileEncoding = 'utf-8'
+
+        if os.path.splitext(fileName)[1] == '':
+            formats = QgsVectorFileWriter.supportedFiltersAndFormats()
+            for f in formats:
+                if f.driverName == options.driverName and len(f.globs) > 0:
+                    fileName = '{}.{}'.format(fileName, f.globs[0][:2])
+
         error = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
         if error != QgsVectorFileWriter.NoError:
             QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
@@ -102,6 +109,11 @@ class DirectoryWriterTask(WriterTaskBase):
         if not pipe.set(provider.clone()):
             QgsMessageLog.logMessage('Failed to process layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
             return
+
+        if os.path.splitext(fileName)[1] == '':
+            formats = QgsRasterFileWriter.extensionsForFormat('GTiff')
+            if len(formats) > 0:
+                fileName = '{}.{}'.format(fileName, formats[0])
 
         writer = QgsRasterFileWriter(fileName)
         writer.setOutputFormat('GTiff')

@@ -29,6 +29,8 @@ import os
 
 from qgis.PyQt import uic
 
+from qgis.core import QgsVectorFileWriter
+
 pluginPath = os.path.split(os.path.dirname(__file__))[0]
 WIDGET, BASE = uic.loadUiType(os.path.join(pluginPath, 'ui', 'directorywriterwidgetbase.ui'))
 
@@ -38,9 +40,15 @@ class DirectoryWriterWidget(BASE, WIDGET):
         super(DirectoryWriterWidget, self).__init__(parent)
         self.setupUi(self)
 
+        drivers = QgsVectorFileWriter.ogrDriverList()
+        self.cmbFormat.blockSignals(True)
+        for driver in drivers:
+            self.cmbFormat.addItem(driver.longName, driver.driverName)
+        self.cmbFormat.blockSignals(False)
+
     def settings(self):
         config = dict()
         config['groupLayers'] = self.chkGroupLayers.isChecked()
-        #config['driverName'] = self.cmbExportFormat.currentData()
+        config['driverName'] = self.cmbFormat.currentData()
 
         return config
