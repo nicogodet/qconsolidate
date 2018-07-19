@@ -35,8 +35,6 @@ from qgis.PyQt.QtWidgets import QWidget
 
 from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsTask, QgsVectorFileWriter
 
-RASTER_SIZE = 2000
-
 
 class WriterBase:
 
@@ -134,14 +132,18 @@ class WriterTaskBase(QgsTask):
     def packagePluginLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
-    def _updateLayerSource(self, layerId, newSource):
+    def _updateLayerSource(self, layerId, newSource, newProvider=None):
         # update layer source in the layer tree section.
         element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
         element.set('source', newSource)
+        if newProvider is not None:
+            element.set('providerKey', newProvider)
 
         # update layer source in the project layers section
         element = self.project.find('./projectlayers/maplayer/[id="{}"]'.format(layerId))
         element.find('datasource').text = newSource
+        if newProvider is not None:
+            element.find('provider').text = newProvider
 
     def _safeName(self, layerName):
         return self.badChars.sub('', layerName).title().replace(' ', '')

@@ -34,6 +34,8 @@ from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsVectorFileWriter, QgsR
 from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
 from qconsolidate.gui.directorywriterwidget import DirectoryWriterWidget
 
+RASTER_SIZE = 2000
+
 
 class DirectoryWriter(WriterBase):
 
@@ -79,7 +81,7 @@ class DirectoryWriterTask(WriterTaskBase):
         for fileName in glob.iglob(wildcard):
             shutil.copy2(fileName, destDirectory)
 
-    def _exportVectorLayer(self, layer, fileName):
+    def _exportVectorLayer(self, layer, fileName, newProvider=None):
         ''' Export given vector layer to the file using given format
         '''
         options = QgsVectorFileWriter.SaveVectorOptions()
@@ -91,15 +93,15 @@ class DirectoryWriterTask(WriterTaskBase):
             formats = QgsVectorFileWriter.supportedFiltersAndFormats()
             for f in formats:
                 if f.driverName == options.driverName and len(f.globs) > 0:
-                    fileName = '{}.{}'.format(fileName, f.globs[0][:2])
+                    fileName = '{}.{}'.format(fileName, f.globs[0][2:])
 
-        error = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
+        error, msg = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
         if error != QgsVectorFileWriter.NoError:
-            QgsMessageLog.logMessage('Failed to process layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
+            QgsMessageLog.logMessage('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=msg), 'QConsolidate')
         else:
-            self._updateLayerSource(layer.id(), fileName)
+            self._updateLayerSource(layer.id(), fileName.replace(self.baseDirectory, '.'), newProvider)
 
-    def _exportRasterLayer(self, layer, fileName):
+    def _exportRasterLayer(self, layer, fileName, newProvider=None):
         ''' Export given raster layer to the file
         '''
         provider = layer.dataProvider()
@@ -107,18 +109,23 @@ class DirectoryWriterTask(WriterTaskBase):
 
         pipe = QgsRasterPipe()
         if not pipe.set(provider.clone()):
-            QgsMessageLog.logMessage('Failed to process layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
+            QgsMessageLog.logMessage('Failed to export layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
             return
 
+        outputFormat = self.settings['rasterFormat'] if 'rasterFormat' in self.settings else 'GTiff'
+
         if os.path.splitext(fileName)[1] == '':
-            formats = QgsRasterFileWriter.extensionsForFormat('GTiff')
+            formats = QgsRasterFileWriter.extensionsForFormat(outputFormat)
             if len(formats) > 0:
                 fileName = '{}.{}'.format(fileName, formats[0])
 
         writer = QgsRasterFileWriter(fileName)
-        writer.setOutputFormat('GTiff')
-        writer.writeRaster(pipe, RASTER_SIZE * k, RASTER_SIZE, provider.extent(), provider.crs())
-        self._updateLayerSource(layer.id(), fileName.replace(self.baseDirectory, '.'))
+        writer.setOutputFormat(outputFormat)
+        error = writer.writeRaster(pipe, RASTER_SIZE * k, RASTER_SIZE, provider.extent(), provider.crs())
+        if error != QgsRasterFileWriter.NoError:
+            QgsMessageLog.logMessage('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
+        else:
+            self._updateLayerSource(layer.id(), fileName.replace(self.baseDirectory, '.'), newProvider)
 
     def _layerTreePath(self, layer):
         ''' Retrieve all parent layer tree groups of the given layer

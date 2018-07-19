@@ -77,5 +77,6 @@ class DirectoryWriterWidget(BASE, WIDGET):
         config = dict()
         config['groupLayers'] = self.chkGroupLayers.isChecked()
         config['vectorFormat'] = self.cmbVectorFormat.currentData()
+        config['rasterFormat'] = self.cmbRasterFormat.currentData()
 
         return config
