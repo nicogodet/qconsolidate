@@ -29,7 +29,15 @@ import os
 
 from osgeo import gdal
 
-from qgis.core import Qgis, QgsMessageLog, QgsProject, QgsMapLayer, QgsVectorFileWriter, QgsRasterDataProvider, QgsRasterPipe, QgsRasterFileWriter
+from qgis.core import (Qgis,
+                       QgsMessageLog,
+                       QgsProject,
+                       QgsMapLayer,
+                       QgsVectorFileWriter,
+                       QgsRasterDataProvider,
+                       QgsRasterPipe,
+                       QgsRasterFileWriter
+                      )
 
 from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
 
@@ -45,7 +53,7 @@ class GeopackageWriter(WriterBase):
         return 'geopackage'
 
     def displayName(self):
-        return 'GeoPackage'
+        return self.tr('GeoPackage')
 
     def task(self, settings):
         return GeopackageWriterTask(settings)
@@ -60,8 +68,6 @@ class GeopackageWriterTask(WriterTaskBase):
         self.filePath = os.path.join(self.baseDirectory, self.LAYERS_DIR_NAME, 'layers.gpkg')
 
     def run(self):
-        self.packageProject()
-
         layersDirectory = os.path.join(self.baseDirectory, self.LAYERS_DIR_NAME)
         if not os.path.isdir(layersDirectory):
             os.mkdir(layersDirectory)
@@ -79,29 +85,9 @@ class GeopackageWriterTask(WriterTaskBase):
 
         ds = None
 
-        layers = QgsProject.instance().mapLayers()
-        total = 100.0 / len(layers)
+        super(GeopackageWriterTask, self).run()
 
-        for count, layer in enumerate(layers.values()):
-            QgsMessageLog.logMessage('Consolidating {layer}.'.format(layer=layer.name()), 'QConsolidate', Qgis.Info)
-            if self.isCanceled():
-                break
-
-            layerType = layer.type()
-            if layerType == QgsMapLayer.VectorLayer:
-                self.packageVectorLayer(layer)
-            elif layerType == QgsMapLayer.RasterLayer:
-                self.packageRasterLayer(layer)
-            elif layerType == QgsMapLayer.PluginLayer:
-                self.packagePluginLayer(layer)
-
-            self.setProgress(int(count * total))
-
-        self.project.write(self.projectFile)
-
-        return True
-
-    def packageVectorLayer(self, layer):
+    def consolidateVectorLayer(self, layer):
         exportLayer = True
 
         providerType = layer.providerType()
@@ -118,7 +104,7 @@ class GeopackageWriterTask(WriterTaskBase):
 
             error, msg = QgsVectorFileWriter.writeAsVectorFormat(layer, self.filePath, options)
             if error != QgsVectorFileWriter.NoError:
-                QgsMessageLog.logMessage('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=msg), 'QConsolidate')
+                QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=msg)), 'QConsolidate', Qgis.Warning)
             else:
                 newSource = '{filePath}|layername={layer}'.format(filePath=self.filePath.replace(self.baseDirectory, '.'), layer=tableName)
                 self._updateLayerSource(layer.id(), newSource, 'ogr')
@@ -142,7 +128,7 @@ class GeopackageWriterTask(WriterTaskBase):
 
             pipe = QgsRasterPipe()
             if not pipe.set(provider.clone()):
-                QgsMessageLog.logMessage('Failed to export layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name()), 'QConsolidate')
+                QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name())), 'QConsolidate', Qgis.Warning)
                 return
 
             tableName = self._safeName(layer.name())
@@ -152,10 +138,10 @@ class GeopackageWriterTask(WriterTaskBase):
 
             error = writer.writeRaster(pipe, cols, rows, provider.extent(), provider.crs())
             if error != QgsRasterFileWriter.NoError:
-                QgsMessageLog.logMessage('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=error), 'QConsolidate')
+                QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=error)), 'QConsolidate', Qgis.Warning)
             else:
                 newSource = 'GPKG:{filePath}:{layer}'.format(filePath=self.filePath, layer=tableName)
                 self._updateLayerSource(layer.id(), newSource, 'gdal')
 
     def packagePluginLayer(self, layer):
-        QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=layer.providerType()), 'QConsolidate')
+        QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=layer.providerType())), 'QConsolidate', Qgis.Info)

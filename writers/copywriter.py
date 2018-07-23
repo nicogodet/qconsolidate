@@ -29,7 +29,9 @@ import os
 
 from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
 
-from qconsolidate.writers.directorywriter import DirectoryWriter, DirectoryWriterTask
+from qconsolidate.writers.directorywriter import (DirectoryWriter,
+                                                  DirectoryWriterTask
+                                                 )
 
 
 class CopyWriter(DirectoryWriter):
@@ -41,7 +43,7 @@ class CopyWriter(DirectoryWriter):
         return 'copydirectory'
 
     def displayName(self):
-        return 'Copy to directory'
+        return self.tr('Copy to directory')
 
     def task(self, settings):
         return CopyWriterTask(settings)
@@ -54,7 +56,7 @@ class CopyWriterTask(DirectoryWriterTask):
 
         self.baseDirectory = self.settings['output']
 
-    def packageVectorLayer(self, layer):
+    def consolidateVectorLayer(self, layer):
         safeLayerName = self._safeName(layer.name())
 
         destDirectory = self.LAYERS_DIR_NAME
@@ -86,9 +88,9 @@ class CopyWriterTask(DirectoryWriterTask):
                 newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
                 self._exportVectorLayer(layer, newFile, 'ogr')
         else:
-            QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
-    def packageRasterLayer(self, layer):
+    def consolidateRasterLayer(self, layer):
         destDirectory = self.LAYERS_DIR_NAME
         if 'groupLayers' in self.settings and self.settings['groupLayers']:
             destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
@@ -105,7 +107,7 @@ class CopyWriterTask(DirectoryWriterTask):
                 newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
                 self._exportRasterLayer(layer, newFile, 'gdal')
         else:
-            QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
     def _processGdalDatasource(self, layer, destDirectory):
         uri = layer.source()
@@ -122,7 +124,7 @@ class CopyWriterTask(DirectoryWriterTask):
             # ignore other virtual filesystems
             if uri.startswith('/vsi'):
                 prefix = uri.slit('/')[0]
-                QgsMessageLog.logMessage('Not supported GDAL virtual filesystem layer "{layerType}"'.format(layerType=prefix), 'QConsolidate')
+                QgsMessageLog.logMessage(self.tr('Not supported GDAL virtual filesystem layer "{layerType}"'.format(layerType=prefix)), 'QConsolidate', Qgis.Info)
                 return
 
             # handle multiple layers in the single dataset

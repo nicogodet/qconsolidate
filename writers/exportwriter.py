@@ -29,7 +29,9 @@ import os
 
 from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
 
-from qconsolidate.writers.directorywriter import DirectoryWriter, DirectoryWriterTask
+from qconsolidate.writers.directorywriter import (DirectoryWriter,
+                                                  DirectoryWriterTask
+                                                 )
 
 
 class ExportWriter(DirectoryWriter):
@@ -41,7 +43,7 @@ class ExportWriter(DirectoryWriter):
         return 'exportdirectory'
 
     def displayName(self):
-        return 'Export to directory'
+        return self.tr('Export to directory')
 
     def task(self, settings):
         return ExportWriterTask(settings)
@@ -54,7 +56,7 @@ class ExportWriterTask(DirectoryWriterTask):
 
         self.baseDirectory = self.settings['output']
 
-    def packageVectorLayer(self, layer):
+    def consolidateVectorLayer(self, layer):
         safeLayerName = self._safeName(layer.name())
 
         destDirectory = self.LAYERS_DIR_NAME
@@ -75,9 +77,9 @@ class ExportWriterTask(DirectoryWriterTask):
                 self._exportVectorLayer(layer, newFile, 'ogr')
                 self._exportLayerStyle(layer, newFile)
         else:
-            QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
-    def packageRasterLayer(self, layer):
+    def consolidateRasterLayer(self, layer):
         safeLayerName = self._safeName(layer.name())
 
         destDirectory = self.LAYERS_DIR_NAME
@@ -98,4 +100,4 @@ class ExportWriterTask(DirectoryWriterTask):
                 self._exportRasterLayer(layer, newFile, 'gdal')
                 self._exportLayerStyle(layer, newFile)
         else:
-            QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)

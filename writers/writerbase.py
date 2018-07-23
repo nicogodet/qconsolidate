@@ -30,10 +30,15 @@ import re
 import shutil
 import xml.etree.ElementTree as ET
 
-from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import pyqtSignal, QCoreApplication
 from qgis.PyQt.QtWidgets import QWidget
 
-from qgis.core import Qgis, QgsProject, QgsMapLayer, QgsMessageLog, QgsTask, QgsVectorFileWriter
+from qgis.core import (Qgis,
+                       QgsProject,
+                       QgsMapLayer,
+                       QgsMessageLog,
+                       QgsTask
+                      )
 
 
 class WriterBase:
@@ -45,13 +50,16 @@ class WriterBase:
         return 'base'
 
     def displayName(self):
-        return 'Base'
+        return self.tr('Base')
 
     def widget(self):
         return QWidget()
 
     def task(self, settings):
         return WriterTaskBase(settings)
+
+    def tr(self, text):
+        return QCoreApplication.translate(self.__class__.__name__, text)
 
 
 class WriterTaskBase(QgsTask):
@@ -76,7 +84,7 @@ class WriterTaskBase(QgsTask):
         self.error = ''
 
     def run(self):
-        self.packageProject()
+        self.consolidateProject()
 
         layersDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
         if not os.path.isdir(layersDirectory):
@@ -92,11 +100,11 @@ class WriterTaskBase(QgsTask):
 
             layerType = layer.type()
             if layerType == QgsMapLayer.VectorLayer:
-                self.packageVectorLayer(layer)
+                self.consolidateVectorLayer(layer)
             elif layerType == QgsMapLayer.RasterLayer:
-                self.packageRasterLayer(layer)
+                self.consolidateRasterLayer(layer)
             elif layerType == QgsMapLayer.PluginLayer:
-                self.packagePluginLayer(layer)
+                self.consolidatePluginLayer(layer)
 
             self.setProgress(int(count * total))
 
@@ -110,7 +118,7 @@ class WriterTaskBase(QgsTask):
         else:
             self.errorOccurred.emit(self.error)
 
-    def packageProject(self):
+    def consolidateProject(self):
         projectFile = QgsProject.instance().fileName()
         fileName = os.path.basename(projectFile)
         if projectFile:
@@ -123,13 +131,13 @@ class WriterTaskBase(QgsTask):
 
         self.project = ET.parse(self.projectFile)
 
-    def packageVectorLayer(self, layer):
+    def consolidateVectorLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
-    def packageRasterLayer(self, layer):
+    def consolidateRasterLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
-    def packagePluginLayer(self, layer):
+    def consolidatePluginLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
     def _updateLayerSource(self, layerId, newSource, newProvider=None):
@@ -150,6 +158,3 @@ class WriterTaskBase(QgsTask):
 
     def _exportLayerStyle(self, layer, destination):
         layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))
-
-    def tr(self, text):
-        return QCoreApplication.translate(self.__class__.__name__, text)
