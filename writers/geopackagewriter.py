@@ -82,11 +82,16 @@ class GeopackageWriterTask(WriterTaskBase):
         ds = None
 
     def consolidateVectorLayer(self, layer):
-        exportLayer = True
+        exportLayer = False
 
         providerType = layer.providerType()
-        if providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs') and ('exportRemote' in self.settings and not self.settings['exportRemote']):
-            exportLayer = False
+        if providerType in ('ogr', 'memory', 'gpx', 'delimitedtext', 'spatialite', 'grass'):
+            exportLayer = True
+        elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
+            if 'exportRemote' in self.settings and self.settings['exportRemote']:
+                exportLayer = True
+        else:
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
         if exportLayer:
             tableName = self._safeName(layer.name())
@@ -104,11 +109,16 @@ class GeopackageWriterTask(WriterTaskBase):
                 self._updateLayerSource(layer.id(), newSource, 'ogr')
 
     def packageRasterLayer(self, layer):
-        exportLayer = True
+        exportLayer = False
 
         providerType = layer.providerType()
-        if providerType in ('wms') and ('exportRemote' in self.settings and not self.settings['exportRemote']):
-            exportLayer = False
+        if providerType in ('gdal', 'grass'):
+            exportLayer = True
+        elif providerType in ('wms'):
+            if 'exportRemote' in self.settings and self.settings['exportRemote']:
+                exportLayer = True
+        else:
+            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
         if exportLayer:
             provider = layer.dataProvider()
