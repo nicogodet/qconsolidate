@@ -147,3 +147,6 @@ class WriterTaskBase(QgsTask):
 
     def _safeName(self, layerName):
         return self.badChars.sub('', layerName).title().replace(' ', '')
+
+    def _exportLayerStyle(self, layer, destination):
+        layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))

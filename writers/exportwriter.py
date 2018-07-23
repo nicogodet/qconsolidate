@@ -69,9 +69,11 @@ class ExportWriterTask(DirectoryWriterTask):
         providerType = layer.providerType()
         if providerType in ('ogr', 'memory', 'gpx', 'delimitedtext', 'spatialite'):
             self._exportVectorLayer(layer, newFile, 'ogr')
+            self._exportLayerStyle(layer, newFile)
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
                 self._exportVectorLayer(layer, newFile, 'ogr')
+                self._exportLayerStyle(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
 
@@ -90,8 +92,10 @@ class ExportWriterTask(DirectoryWriterTask):
         providerType = layer.providerType()
         if providerType == 'gdal':
             self._exportRasterLayer(layer, newFile)
+            self._exportLayerStyle(layer, newFile)
         elif providerType in ('wms'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
                 self._exportRasterLayer(layer, newFile, 'gdal')
+                self._exportLayerStyle(layer, newFile)
         else:
             QgsMessageLog.logMessage('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType), 'QConsolidate')
