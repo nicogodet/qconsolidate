@@ -54,50 +54,46 @@ class ExportWriterTask(DirectoryWriterTask):
     def __init__(self, settings):
         super(ExportWriterTask, self).__init__(settings)
 
-        self.baseDirectory = self.settings['output']
-
     def consolidateVectorLayer(self, layer):
-        safeLayerName = self._safeName(layer.name())
-
-        destDirectory = self.LAYERS_DIR_NAME
-        if 'groupLayers' in self.settings and self.settings['groupLayers']:
-            destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
-            newPath = os.path.join(self.baseDirectory, destDirectory)
-            if not os.path.isdir(newPath):
-                os.makedirs(newPath)
-
-        newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
-
+        exportLayer = False
         providerType = layer.providerType()
-        if providerType in ('ogr', 'memory', 'gpx', 'delimitedtext', 'spatialite'):
-            self._exportVectorLayer(layer, newFile, 'ogr')
-            self._exportLayerStyle(layer, newFile)
+        if providerType in ('ogr', 'memory', 'gpx', 'delimitedtext', 'spatialite', 'grass'):
+            exportLayer = True
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                self._exportVectorLayer(layer, newFile, 'ogr')
-                self._exportLayerStyle(layer, newFile)
+                exportLayer = True
         else:
             QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
-    def consolidateRasterLayer(self, layer):
-        safeLayerName = self._safeName(layer.name())
-
-        destDirectory = self.LAYERS_DIR_NAME
-        if 'groupLayers' in self.settings and self.settings['groupLayers']:
-            destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
-            newPath = os.path.join(self.baseDirectory, destDirectory)
+        if exportLayer:
+            newPath = self.layerTreePath(layer)
             if not os.path.isdir(newPath):
                 os.makedirs(newPath)
 
-        newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
+            filePath = os.path.join(newPath, self.safeName(layer.name()))
 
+            if self.exportVectorLayer(layer, filePath):
+                newSource = filePath.replace(self.baseDirectory, '.')
+                self.updateLayerSource(layer.id(), newSource, 'ogr')
+
+    def consolidateRasterLayer(self, layer):
+        exportLayer = False
         providerType = layer.providerType()
-        if providerType == 'gdal':
-            self._exportRasterLayer(layer, newFile)
-            self._exportLayerStyle(layer, newFile)
+        if providerType in ('gdal', 'grass'):
+            exportLayer = True
         elif providerType in ('wms'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                self._exportRasterLayer(layer, newFile, 'gdal')
-                self._exportLayerStyle(layer, newFile)
+                exportLayer = True
         else:
             QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
+
+        if exportLayer:
+            newPath = self.layerTreePath(layer)
+            if not os.path.isdir(newPath):
+                os.makedirs(newPath)
+
+            filePath = os.path.join(self.baseDirectory, layerDirectory, self.safeName(layer.name()))
+
+            if self.exportRasterLayer(layer, filePath):
+                newSource = filePath.replace(self.baseDirectory, '.')
+                self.updateLayerSource(layer.id(), newSource, 'gdal')

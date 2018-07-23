@@ -40,6 +40,10 @@ from qgis.core import (Qgis,
                        QgsTask
                       )
 
+LAYERS_DIRECTORY = 'layers'
+BAD_CHARS = re.compile(r'[&:\(\)\-\,\'\.\/ ]')
+GDAL_VSI = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
+
 
 class WriterBase:
 
@@ -67,11 +71,6 @@ class WriterTaskBase(QgsTask):
     consolidateComplete = pyqtSignal()
     errorOccurred = pyqtSignal(str)
 
-    badChars = re.compile(r'[&:\(\)\-\,\'\.\/ ]')
-    gdalVsi = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
-
-    LAYERS_DIR_NAME = 'layers'
-
     def __init__(self, settings):
         QgsTask.__init__(self, 'QConsolidate')
 
@@ -79,14 +78,15 @@ class WriterTaskBase(QgsTask):
 
         self.project = None
         self.projectFile = None
-        self.baseDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
+
+        self.baseDirectory = self.settings['output']
+        self.dataDirectory = os.path.join(self.baseDirectory, LAYERS_DIRECTORY)
 
         self.error = ''
 
     def run(self):
-        layersDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
-        if not os.path.isdir(layersDirectory):
-            os.mkdir(layersDirectory)
+        if not os.path.isdir(self.dataDirectory):
+            os.mkdir(self.dataDirectory)
 
         self.prepare()
 
@@ -129,11 +129,11 @@ class WriterTaskBase(QgsTask):
         projectFile = QgsProject.instance().fileName()
         fileName = os.path.basename(projectFile)
         if projectFile:
-            shutil.copy(projectFile, self.settings['output'])
-            self.projectFile = os.path.join(self.settings['output'], fileName)
+            shutil.copy(projectFile, self.baseDirectory)
+            self.projectFile = os.path.join(self.baseDirectory, fileName)
         else:
             # FIXME: save project in temporary files?
-            self.projectFile = os.path.join(self.settings['output'], 'project.qgs')
+            self.projectFile = os.path.join(self.baseDirectory, 'project.qgs')
             QgsProject.instance().write(self.projectFile)
 
         self.project = ET.parse(self.projectFile)
@@ -150,7 +150,70 @@ class WriterTaskBase(QgsTask):
     def consolidateMeshLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
-    def _updateLayerSource(self, layerId, newSource, newProvider=None):
+    def exportVectorLayer(self, layer, destinationFile, asLayer=False):
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = self.settings['vectorFormat'] if 'vectorFormat' in self.settings else 'GPKG'
+        options.fileEncoding = 'utf-8'
+        if asLayer:
+            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+            options.layerName = self.safeName(layer.name())
+        else:
+            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+
+        if os.path.splitext(destinationFile)[1] == '':
+            formats = QgsVectorFileWriter.supportedFiltersAndFormats()
+            for f in formats:
+                if f.driverName == options.driverName and len(f.globs) > 0:
+                    fileName = '{}.{}'.format(fileName, f.globs[0][2:])
+
+        success = True
+        error, msg = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
+        if error != QgsVectorFileWriter.NoError:
+            QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=msg)), 'QConsolidate', Qgis.Warning)
+            success = False
+
+        return success
+
+    def exportRasterLayer(self, layer, destinationFile, options=None):
+        outputFormat = self.settings['rasterFormat'] if 'rasterFormat' in self.settings else 'GTiff'
+
+        if os.path.splitext(destinationFile)[1] == '':
+            formats = QgsRasterFileWriter.extensionsForFormat(outputFormat)
+            if len(formats) > 0:
+                fileName = '{}.{}'.format(fileName, formats[0])
+
+        provider = layer.dataProvider()
+
+        cols = provider.xSize()
+        rows = provider.ySize()
+        if not provider.capabilities() & QgsRasterDataProvider.Size:
+            k = float(provider.extent().width()) / float(provider.extent().height())
+            cols = RASTER_SIZE * k
+            rows = RASTER_SIZE
+
+        pipe = QgsRasterPipe()
+        if not pipe.set(provider.clone()):
+            QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name())), 'QConsolidate', Qgis.Warning)
+            return
+
+        writer = QgsRasterFileWriter(destinationFile)
+        writer.setOutputFormat(outputFormat)
+
+        if options is not None:
+            writer.setCreateOptions(options)
+
+        success = True
+        error = writer.writeRaster(pipe, cols, rows, provider.extent(), provider.crs())
+        if error != QgsRasterFileWriter.NoError:
+            QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=error)), 'QConsolidate', Qgis.Warning)
+            success = False
+
+        return success
+
+    def exportStyle(self, layer, destination):
+        layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))
+
+    def updateLayerSource(self, layerId, newSource, newProvider=None):
         # update layer source in the layer tree section.
         element = self.project.find('*//layer-tree-layer/[@id="{}"]'.format(layerId))
         element.set('source', newSource)
@@ -163,8 +226,22 @@ class WriterTaskBase(QgsTask):
         if newProvider is not None:
             element.find('provider').text = newProvider
 
-    def _safeName(self, layerName):
-        return self.badChars.sub('', layerName).title().replace(' ', '')
+    def safeName(self, layerName):
+        return BAD_CHARS.sub('', layerName).title().replace(' ', '')
 
-    def _exportLayerStyle(self, layer, destination):
-        layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))
+    def layerTreePath(self, layer):
+        layerPath = self.dataDirectory
+        if 'groupLayers' in self.settings and self.settings['groupLayers']:
+            groups = []
+            root = QgsProject.instance().layerTreeRoot()
+            node = root.findLayer(layer.id())
+            while node.parent() is not None:
+                groups.append(node.parent().name())
+                node = node.parent()
+
+            groups[-1] = LAYERS_DIRECTORY
+            groups.reverse()
+
+            layerPath = os.path.join(self.baseDirectory, *groups)
+
+        return layerPath
