@@ -29,12 +29,12 @@ import os
 
 from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
 
-from qconsolidate.writers.directorywriter import (DirectoryWriter,
-                                                  DirectoryWriterTask
-                                                 )
+from qconsolidate.writers.writerbase import (WriterBase,
+                                             WriterTaskBase
+                                            )
 
 
-class ExportWriter(DirectoryWriter):
+class ExportWriter(WriterBase):
 
     def __init__(self):
         super(ExportWriter, self).__init__()
@@ -49,7 +49,7 @@ class ExportWriter(DirectoryWriter):
         return ExportWriterTask(settings)
 
 
-class ExportWriterTask(DirectoryWriterTask):
+class ExportWriterTask(WriterTaskBase):
 
     def __init__(self, settings):
         super(ExportWriterTask, self).__init__(settings)
@@ -97,3 +97,9 @@ class ExportWriterTask(DirectoryWriterTask):
             if self.exportRasterLayer(layer, filePath):
                 newSource = filePath.replace(self.baseDirectory, '.')
                 self.updateLayerSource(layer.id(), newSource, 'gdal')
+
+    def consolidatePluginLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Plugin layers are currently not supported.', 'QConsolidate', Qgis.Info))
+
+    def consolidateMeshLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Mesh layers are currently not supported.', 'QConsolidate', Qgis.Info))
