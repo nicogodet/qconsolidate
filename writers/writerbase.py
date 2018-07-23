@@ -150,3 +150,6 @@ class WriterTaskBase(QgsTask):
 
     def _exportLayerStyle(self, layer, destination):
         layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))
+
+    def tr(self, text):
+        return QCoreApplication.translate(self.__class__.__name__, text)
