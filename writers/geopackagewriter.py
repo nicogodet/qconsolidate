@@ -67,11 +67,7 @@ class GeopackageWriterTask(WriterTaskBase):
         self.baseDirectory = self.settings['output']
         self.filePath = os.path.join(self.baseDirectory, self.LAYERS_DIR_NAME, 'layers.gpkg')
 
-    def run(self):
-        layersDirectory = os.path.join(self.baseDirectory, self.LAYERS_DIR_NAME)
-        if not os.path.isdir(layersDirectory):
-            os.mkdir(layersDirectory)
-
+    def prepare(self):
         gdal.AllRegister()
         driver = gdal.GetDriverByName('GPKG')
         if driver is None:
@@ -84,8 +80,6 @@ class GeopackageWriterTask(WriterTaskBase):
             return False
 
         ds = None
-
-        super(GeopackageWriterTask, self).run()
 
     def consolidateVectorLayer(self, layer):
         exportLayer = True

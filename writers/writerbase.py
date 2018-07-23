@@ -88,6 +88,8 @@ class WriterTaskBase(QgsTask):
         if not os.path.isdir(layersDirectory):
             os.mkdir(layersDirectory)
 
+        self.prepare()
+
         self.consolidateProject()
 
         layers = QgsProject.instance().mapLayers()
@@ -119,6 +121,9 @@ class WriterTaskBase(QgsTask):
             self.consolidateComplete.emit()
         else:
             self.errorOccurred.emit(self.error)
+
+    def prepare(self):
+        pass
 
     def consolidateProject(self):
         projectFile = QgsProject.instance().fileName()
