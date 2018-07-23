@@ -143,5 +143,8 @@ class GeopackageWriterTask(WriterTaskBase):
                 newSource = 'GPKG:{filePath}:{layer}'.format(filePath=self.filePath, layer=tableName)
                 self._updateLayerSource(layer.id(), newSource, 'gdal')
 
-    def packagePluginLayer(self, layer):
-        QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=layer.providerType())), 'QConsolidate', Qgis.Info)
+    def consolidatePluginLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Plugin layers are currently not supported.', 'QConsolidate', Qgis.Info)
+
+    def consolidateMeshLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Mesh layers are currently not supported.', 'QConsolidate', Qgis.Info)

@@ -84,11 +84,11 @@ class WriterTaskBase(QgsTask):
         self.error = ''
 
     def run(self):
-        self.consolidateProject()
-
         layersDirectory = os.path.join(self.settings['output'], self.LAYERS_DIR_NAME)
         if not os.path.isdir(layersDirectory):
             os.mkdir(layersDirectory)
+
+        self.consolidateProject()
 
         layers = QgsProject.instance().mapLayers()
         total = 100.0 / len(layers)
@@ -105,6 +105,8 @@ class WriterTaskBase(QgsTask):
                 self.consolidateRasterLayer(layer)
             elif layerType == QgsMapLayer.PluginLayer:
                 self.consolidatePluginLayer(layer)
+            elif layerType == QgsMapLayer.MeshLayer:
+                self.consolidateMeshLayer(layer)
 
             self.setProgress(int(count * total))
 
@@ -138,6 +140,9 @@ class WriterTaskBase(QgsTask):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
     def consolidatePluginLayer(self, layer):
+        raise NotImplementedError('Needs to be implemented by subclasses.')
+
+    def consolidateMeshLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
 
     def _updateLayerSource(self, layerId, newSource, newProvider=None):

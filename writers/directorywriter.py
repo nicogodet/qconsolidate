@@ -67,7 +67,10 @@ class DirectoryWriterTask(WriterTaskBase):
         super(DirectoryWriterTask, self).__init__(settings)
 
     def consolidatePluginLayer(self, layer):
-        QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=layer.providerType())), 'QConsolidate', Qgis.Info)
+        QgsMessageLog.logMessage(self.tr('Plugin layers are currently not supported.', 'QConsolidate', Qgis.Info)
+
+    def consolidateMeshLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Mesh layers are currently not supported.', 'QConsolidate', Qgis.Info)
 
     def _filePathFromUri(self, uri):
         filePath = uri.split('?')[0]
