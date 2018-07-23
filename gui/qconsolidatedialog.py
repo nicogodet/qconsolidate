@@ -28,7 +28,7 @@ __revision__ = '$Format:%H$'
 import os
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox
 
 from qgis.core import QgsSettings
 from qgis.gui import QgsGui, QgsFileWidget
@@ -76,8 +76,18 @@ class QConsolidateDialog(BASE, WIDGET):
         QDialog.reject(self)
 
     def accept(self):
-        self._saveSettings()
+        if os.path.isdir(os.path.join(self.fwOutputDirectory.filePath(), 'layers')):
+            res = QMessageBox.question(self,
+                                       self.tr('Directory exists'),
+                                       self.tr('Destination directory already has "layers" subdirectory. '
+                                               'Probably it already contains data from another project. Continue?'),
+                                         QMessageBox.Yes | QMessageBox.No,
+                                         QMessageBox.No
+                                         )
+            if res != QMessageBox.Yes:
+                return
 
+        self._saveSettings()
         QDialog.accept(self)
 
     def _saveSettings(self):
