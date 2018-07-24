@@ -27,11 +27,10 @@ __revision__ = '$Format:%H$'
 
 import os
 
-from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
+from qgis.core import Qgis, QgsMessageLog
 
-from qconsolidate.writers.writerbase import (WriterBase,
-                                             WriterTaskBase
-                                            )
+from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
+from qconsolidate.gui.directorywriterwidget import DirectoryWriterWidget
 
 
 class ExportWriter(WriterBase):
@@ -44,6 +43,9 @@ class ExportWriter(WriterBase):
 
     def displayName(self):
         return self.tr('Export to directory')
+
+    def widget(self):
+        return DirectoryWriterWidget()
 
     def task(self, settings):
         return ExportWriterTask(settings)
@@ -72,7 +74,8 @@ class ExportWriterTask(WriterTaskBase):
 
             filePath = os.path.join(newPath, self.safeName(layer.name()))
 
-            if self.exportVectorLayer(layer, filePath):
+            ok, filePath = self.exportVectorLayer(layer, filePath)
+            if ok:
                 newSource = filePath.replace(self.baseDirectory, '.')
                 self.updateLayerSource(layer.id(), newSource, 'ogr')
 
@@ -92,9 +95,10 @@ class ExportWriterTask(WriterTaskBase):
             if not os.path.isdir(newPath):
                 os.makedirs(newPath)
 
-            filePath = os.path.join(self.baseDirectory, layerDirectory, self.safeName(layer.name()))
+            filePath = os.path.join(newPath, self.safeName(layer.name()))
 
-            if self.exportRasterLayer(layer, filePath):
+            ok, filePath = self.exportRasterLayer(layer, filePath)
+            if ok:
                 newSource = filePath.replace(self.baseDirectory, '.')
                 self.updateLayerSource(layer.id(), newSource, 'gdal')
 

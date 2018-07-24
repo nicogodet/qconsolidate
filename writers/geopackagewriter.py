@@ -29,6 +29,8 @@ import os
 
 from osgeo import gdal
 
+from qgis.PyQt.QtWidgets import QWidget
+
 from qgis.core import (Qgis,
                        QgsMessageLog,
                        QgsProject,
@@ -42,6 +44,19 @@ from qgis.core import (Qgis,
 from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
 
 
+class GeopackageWriterWidget(QWidget):
+
+    def __init__(self):
+        super(GeopackageWriterWidget, self).__init__()
+
+    def settings(self):
+        config = dict()
+        config['vectorFormat'] = 'GPKG'
+        config['rasterFormat'] = 'GPKG'
+
+        return config
+
+
 class GeopackageWriter(WriterBase):
 
     def __init__(self):
@@ -52,6 +67,9 @@ class GeopackageWriter(WriterBase):
 
     def displayName(self):
         return self.tr('GeoPackage')
+
+    def widget(self):
+        return GeopackageWriterWidget()
 
     def task(self, settings):
         return GeopackageWriterTask(settings)
@@ -92,7 +110,8 @@ class GeopackageWriterTask(WriterTaskBase):
             QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
         if exportLayer:
-            if self.exportVectorLayer(layer, self.filePath, True):
+            ok, filePath = self.exportVectorLayer(layer, self.filePath, True)
+            if ok:
                 newSource = '{filePath}|layername={layer}'.format(filePath=self.filePath.replace(self.baseDirectory, '.'), layer=self.safeName(layer.name()))
                 self.updateLayerSource(layer.id(), newSource, 'ogr')
 
@@ -110,7 +129,8 @@ class GeopackageWriterTask(WriterTaskBase):
 
         if exportLayer:
             tableName = self.safeName(layer.name())
-            if self.exportRasterLayer(layer, self.filePath, ['APPEND_SUBDATASET=YES', 'RASTER_TABLE={table}'.format(table=tableName)]):
+            ok, filePath = self.exportRasterLayer(layer, self.filePath, ['APPEND_SUBDATASET=YES', 'RASTER_TABLE={table}'.format(table=tableName)])
+            if ok:
                 newSource = 'GPKG:{filePath}:{layer}'.format(filePath=self.filePath, layer=tableName)
                 self.updateLayerSource(layer.id(), newSource, 'gdal')
 

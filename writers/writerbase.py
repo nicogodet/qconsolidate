@@ -37,12 +37,16 @@ from qgis.core import (Qgis,
                        QgsProject,
                        QgsMapLayer,
                        QgsMessageLog,
-                       QgsTask
+                       QgsTask,
+                       QgsRasterPipe,
+                       QgsRasterFileWriter,
+                       QgsRasterDataProvider,
+                       QgsVectorFileWriter,
                       )
 
+RASTER_SIZE = 2000
 LAYERS_DIRECTORY = 'layers'
 BAD_CHARS = re.compile(r'[&:\(\)\-\,\'\.\/ ]')
-GDAL_VSI = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
 
 
 class WriterBase:
@@ -164,15 +168,15 @@ class WriterTaskBase(QgsTask):
             formats = QgsVectorFileWriter.supportedFiltersAndFormats()
             for f in formats:
                 if f.driverName == options.driverName and len(f.globs) > 0:
-                    fileName = '{}.{}'.format(fileName, f.globs[0][2:])
+                    destinationFile = '{}.{}'.format(destinationFile, f.globs[0][2:])
 
         success = True
-        error, msg = QgsVectorFileWriter.writeAsVectorFormat(layer, fileName, options)
+        error, msg = QgsVectorFileWriter.writeAsVectorFormat(layer, destinationFile, options)
         if error != QgsVectorFileWriter.NoError:
             QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=msg)), 'QConsolidate', Qgis.Warning)
             success = False
 
-        return success
+        return success, destinationFile
 
     def exportRasterLayer(self, layer, destinationFile, options=None):
         outputFormat = self.settings['rasterFormat'] if 'rasterFormat' in self.settings else 'GTiff'
@@ -180,7 +184,7 @@ class WriterTaskBase(QgsTask):
         if os.path.splitext(destinationFile)[1] == '':
             formats = QgsRasterFileWriter.extensionsForFormat(outputFormat)
             if len(formats) > 0:
-                fileName = '{}.{}'.format(fileName, formats[0])
+                destinationFile = '{}.{}'.format(destinationFile, formats[0])
 
         provider = layer.dataProvider()
 
@@ -208,7 +212,7 @@ class WriterTaskBase(QgsTask):
             QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": {message}.'.format(layer=layer.name(), message=error)), 'QConsolidate', Qgis.Warning)
             success = False
 
-        return success
+        return success, destinationFile
 
     def exportStyle(self, layer, destination):
         layer.saveNamedStyle('{}.qml'.format(os.path.splitext(destination)[0]))

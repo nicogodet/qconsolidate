@@ -26,15 +26,19 @@ __copyright__ = '(C) 2018, Alexander Bruy'
 __revision__ = '$Format:%H$'
 
 import os
+import re
+import glob
+import shutil
 
 from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
 
-from qconsolidate.writers.directorywriter import (DirectoryWriter,
-                                                  DirectoryWriterTask
-                                                 )
+from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
+from qconsolidate.gui.directorywriterwidget import DirectoryWriterWidget
+
+GDAL_VSI = re.compile(r'(\/vsi.*?\/)(\/?.*(\.zip|\.t?gz|\.tar))\/?(.*)')
 
 
-class CopyWriter(DirectoryWriter):
+class CopyWriter(WriterBase):
 
     def __init__(self):
         super(CopyWriter, self).__init__()
@@ -45,81 +49,95 @@ class CopyWriter(DirectoryWriter):
     def displayName(self):
         return self.tr('Copy to directory')
 
+    def widget(self):
+        return DirectoryWriterWidget()
+
     def task(self, settings):
         return CopyWriterTask(settings)
 
 
-class CopyWriterTask(DirectoryWriterTask):
+class CopyWriterTask(WriterTaskBase):
 
     def __init__(self, settings):
         super(CopyWriterTask, self).__init__(settings)
 
-        self.baseDirectory = self.settings['output']
-
     def consolidateVectorLayer(self, layer):
-        safeLayerName = self._safeName(layer.name())
+        newPath = self.layerTreePath(layer)
+        if not os.path.isdir(newPath):
+            os.makedirs(newPath)
 
-        destDirectory = self.LAYERS_DIR_NAME
-        if 'groupLayers' in self.settings and self.settings['groupLayers']:
-            destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
-            newPath = os.path.join(self.baseDirectory, destDirectory)
-            if not os.path.isdir(newPath):
-                os.makedirs(newPath)
+        exportLayer = False
 
         providerType = layer.providerType()
         if providerType == 'ogr':
-            self._processGdalDatasource(layer, destDirectory)
-        elif providerType == 'memory':
-            newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
-            self._exportVectorLayer(layer, newFile, 'ogr')
+            self._processGdalDatasource(layer, newPath)
         elif providerType in ('gpx', 'delimitedtext'):
-            filePath, layerPath = self._filePathFromUri(layer.source())
-            self._copyLayerFiles(filePath, os.path.join(self.baseDirectory, destDirectory))
-            newFile = './{dirName}/{fileName}?{layer}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
-            self._updateLayerSource(layer.id(), newFile)
+            layerFile, layerName = self._filePathFromUri(layer.source())
+            self._copyLayerFiles(layerFile, newPath)
+            newDirectory = newPath.replace(self.baseDirectory, '.')
+            newSource = '{dirName}/{fileName}?{layer}'.format(dirName=newDirectory, fileName=os.path.split(layerFile)[1], layer=layerName)
+            self.updateLayerSource(layer.id(), newSource)
         elif providerType == 'spatialite':
             uri = QgsDataSourceUri(layer.source())
-            filePath = uri.database()
-            self._copyLayerFiles(filePath, os.path.join(self.baseDirectory, destDirectory))
-            uri.setDatabase('./{dirName}/{fileName}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1]))
-            self._updateLayerSource(layer.id(), uri.uri())
+            layerFile = uri.database()
+            self._copyLayerFiles(layerFile, newPath)
+            newDirectory = newPath.replace(self.baseDirectory, '.')
+            uri.setDatabase('./{dirName}/{fileName}'.format(dirName=newDirectory, fileName=os.path.split(layerFile)[1]))
+            self.updateLayerSource(layer.id(), uri.uri())
+        elif providerType == 'memory':
+            exportLayer = True
         elif providerType in ('DB2', 'mssql', 'oracle', 'postgres', 'wfs'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
-                self._exportVectorLayer(layer, newFile, 'ogr')
+                exportLayer = True
         else:
             QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
+        if exportLayer:
+            filePath = os.path.join(newPath, self.safeName(layer.name()))
+            ok, filePath = self.exportVectorLayer(layer, filePath)
+            if ok:
+                newSource = filePath.replace(self.baseDirectory, '.')
+                self.updateLayerSource(layer.id(), newSource, 'ogr')
+
     def consolidateRasterLayer(self, layer):
-        destDirectory = self.LAYERS_DIR_NAME
-        if 'groupLayers' in self.settings and self.settings['groupLayers']:
-            destDirectory = os.path.join(self.LAYERS_DIR_NAME, *self._layerTreePath(layer))
-            newPath = os.path.join(self.baseDirectory, destDirectory)
-            if not os.path.isdir(newPath):
-                os.makedirs(newPath)
+        newPath = self.layerTreePath(layer)
+        if not os.path.isdir(newPath):
+            os.makedirs(newPath)
 
         providerType = layer.providerType()
         if providerType == 'gdal':
-            self._processGdalDatasource(layer, destDirectory)
+            self._processGdalDatasource(layer, newPath)
         elif providerType in ('wms'):
             if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                safeLayerName = self._safeName(layer.name())
-                newFile = os.path.join(self.baseDirectory, destDirectory, safeLayerName)
-                self._exportRasterLayer(layer, newFile, 'gdal')
+                filePath = os.path.join(newPath, self.safeName(layer.name()))
+                ok, filePath = self.exportRasterLayer(layer, filePath)
+                if ok:
+                    newSource = filePath.replace(self.baseDirectory, '.')
+                    self.updateLayerSource(layer.id(), newSource, 'gdal')
         else:
             QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
+
+    def consolidatePluginLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Plugin layers are currently not supported.', 'QConsolidate', Qgis.Info))
+
+    def consolidateMeshLayer(self, layer):
+        QgsMessageLog.logMessage(self.tr('Mesh layers are currently not supported.', 'QConsolidate', Qgis.Info))
 
     def _processGdalDatasource(self, layer, destDirectory):
         uri = layer.source()
         filePath = layer.source()
-        newLayerSource = './{dirName}/{fileName}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1])
+        newDirectory = destDirectory.replace(self.baseDirectory, '.')
+        newSource = '{dirName}/{fileName}'.format(dirName=newDirectory, fileName=os.path.split(filePath)[1])
         if uri.startswith(('/vsizip/', '/vsigzip/', '/vsitar/')):
-            m = self.gdalVsi.search(uri)
+            m = GDAL_VSI.search(uri)
             if m is not None:
                 prefix = m.group(1)
                 filePath = m.group(2)
                 layerPath = m.group(4)
-                newLayerSource = '{vsi}./{dirName}/{fileName}/{layer}'.format(vsi=prefix, dirName=destDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
+                newSource = '{vsi}{dirName}/{fileName}/{layer}'.format(vsi=prefix, dirName=newDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
+            else:
+                QgsMessageLog.logMessage(self.tr('Failed to parse URI: "{uri}"'.format(uri=uri)), 'QConsolidate', Qgis.Warning)
+                return
         else:
             # ignore other virtual filesystems
             if uri.startswith('/vsi'):
@@ -131,7 +149,25 @@ class CopyWriterTask(DirectoryWriterTask):
             if '|' in uri:
                 filePath = uri.split('|')[0]
                 layerPath = uri.split('|')[1]
-                newLayerSource = './{dirName}/{fileName}|{layer}'.format(dirName=destDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
+                newSource = '{dirName}/{fileName}|{layer}'.format(dirName=newDirectory, fileName=os.path.split(filePath)[1], layer=layerPath)
 
-        self._copyLayerFiles(filePath, os.path.join(self.baseDirectory, destDirectory))
-        self._updateLayerSource(layer.id(), newLayerSource)
+        self._copyLayerFiles(filePath, destDirectory)
+        self.updateLayerSource(layer.id(), newSource)
+
+    def _copyLayerFiles(self, layerPath, destDirectory):
+        ''' Copy all files that belongs to the layer to the given directory
+        '''
+        wildcard = '{}.*'.format(os.path.splitext(layerPath)[0])
+        for fileName in glob.iglob(wildcard):
+            shutil.copy2(fileName, destDirectory)
+
+    def _filePathFromUri(self, uri):
+        filePath = uri.split('?')[0]
+        layerPath = uri.split('?')[1]
+        if os.name == 'nt':
+            # on Windows strip 'file:///' prefix from the path
+            # FIXME: need to handle special case — LAN URI
+            return (filePath[8:], layerPath) if filePath.startswith('file://') else (filePath, layerPath)
+        else:
+            # on Linux strip 'file://' prefix from the path
+            return (filePath[7:], layerPath) if filePath.startswith('file://') else (filePath, layerPath)
