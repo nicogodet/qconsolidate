@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    geopackagewriter.py
+    spatialitewriter.py
     ---------------------
     Date                 : July 2018
     Copyright            : (C) 2018 by Alexander Bruy
@@ -31,56 +31,56 @@ from osgeo import ogr
 
 from qgis.PyQt.QtWidgets import QWidget
 
-from qgis.core import Qgis, QgsMessageLog
+from qgis.core import Qgis, QgsMessageLog, QgsDataSourceUri
 
 from qconsolidate.writers.writerbase import WriterBase, WriterTaskBase
 
 
-class GeopackageWriterWidget(QWidget):
+class SpatialiteWriterWidget(QWidget):
 
     def __init__(self):
-        super(GeopackageWriterWidget, self).__init__()
+        super(SpatialiteWriterWidget, self).__init__()
 
     def settings(self):
         config = dict()
-        config['vectorFormat'] = 'GPKG'
-        config['rasterFormat'] = 'GPKG'
+        config['vectorFormat'] = 'SQLite'
+        config['rasterFormat'] = 'Rasterlite'
 
         return config
 
 
-class GeopackageWriter(WriterBase):
+class SpatialiteWriter(WriterBase):
 
     def __init__(self):
-        super(GeopackageWriter, self).__init__()
+        super(SpatialiteWriter, self).__init__()
 
     def name(self):
-        return 'geopackage'
+        return 'spatialite'
 
     def displayName(self):
-        return self.tr('GeoPackage')
+        return self.tr('SpatiaLite')
 
     def widget(self):
-        return GeopackageWriterWidget()
+        return SpatialiteWriterWidget()
 
     def task(self, settings):
-        return GeopackageWriterTask(settings)
+        return SpatialiteWriterTask(settings)
 
 
-class GeopackageWriterTask(WriterTaskBase):
+class SpatialiteWriterTask(WriterTaskBase):
 
     def __init__(self, settings):
-        super(GeopackageWriterTask, self).__init__(settings)
+        super(SpatialiteWriterTask, self).__init__(settings)
 
-        self.filePath = os.path.join(self.dataDirectory, 'layers.gpkg')
+        self.filePath = os.path.join(self.dataDirectory, 'layers.sqlite')
 
     def prepare(self):
-        driver = ogr.GetDriverByName('GPKG')
+        driver = ogr.GetDriverByName('SQLite')
         if driver is None:
-            self.error = self.tr('"GeoPackage" driver not found.')
+            self.error = self.tr('"SQLite" driver not found.')
             return False
 
-        ds = driver.CreateDataSource(self.filePath)
+        ds = driver.CreateDataSource(self.filePath, options=['SPATIALITE=YES'])
         if ds is None:
             self.error = self.tr('Failed to create database: {message}'.format(gdal.GetLastErrorMsg()))
             return False
@@ -102,27 +102,30 @@ class GeopackageWriterTask(WriterTaskBase):
         if exportLayer:
             ok, filePath = self.exportVectorLayer(layer, self.filePath, True)
             if ok:
-                newSource = '{filePath}|layername={layer}'.format(filePath=self.filePath.replace(self.baseDirectory, '.'), layer=self.safeName(layer.name()))
-                self.updateLayerSource(layer.id(), newSource, 'ogr')
+                uri = QgsDataSourceUri()
+                uri.setDatabase(self.filePath.replace(self.baseDirectory, '.'))
+                uri.setDataSource('', self.safeName(layer.name()), 'geometry')
+                self.updateLayerSource(layer.id(), uri.uri(), 'spatialite')
 
     def consolidateRasterLayer(self, layer):
-        exportLayer = False
+        pass
+        #~ exportLayer = False
 
-        providerType = layer.providerType()
-        if providerType in ('gdal', 'grass'):
-            exportLayer = True
-        elif providerType in ('wms'):
-            if 'exportRemote' in self.settings and self.settings['exportRemote']:
-                exportLayer = True
-        else:
-            QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
+        #~ providerType = layer.providerType()
+        #~ if providerType in ('gdal', 'grass'):
+            #~ exportLayer = True
+        #~ elif providerType in ('wms'):
+            #~ if 'exportRemote' in self.settings and self.settings['exportRemote']:
+                #~ exportLayer = True
+        #~ else:
+            #~ QgsMessageLog.logMessage(self.tr('Layers from the "{provider}" provider are currently not supported.'.format(provider=providerType)), 'QConsolidate', Qgis.Info)
 
-        if exportLayer:
-            tableName = self.safeName(layer.name())
-            ok, filePath = self.exportRasterLayer(layer, self.filePath, ['APPEND_SUBDATASET=YES', 'RASTER_TABLE={table}'.format(table=tableName)])
-            if ok:
-                newSource = 'GPKG:{filePath}:{layer}'.format(filePath=self.filePath, layer=tableName)
-                self.updateLayerSource(layer.id(), newSource, 'gdal')
+        #~ if exportLayer:
+            #~ tableName = self.safeName(layer.name())
+            #~ ok, filePath = self.exportRasterLayer(layer, self.filePath, ['APPEND_SUBDATASET=YES', 'COVERAGE={table}'.format(table=tableName)])
+            #~ if ok:
+                #~ newSource = 'RASTERLITE2:{filePath}:{layer}'.format(filePath=self.filePath, layer=tableName)
+                #~ self.updateLayerSource(layer.id(), newSource, 'gdal')
 
     def consolidatePluginLayer(self, layer):
         QgsMessageLog.logMessage(self.tr('Plugin layers are currently not supported.', 'QConsolidate', Qgis.Info))
