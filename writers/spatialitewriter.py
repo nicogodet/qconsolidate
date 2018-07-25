@@ -44,7 +44,7 @@ class SpatialiteWriterWidget(QWidget):
     def settings(self):
         config = dict()
         config['vectorFormat'] = 'SQLite'
-        config['rasterFormat'] = 'Rasterlite'
+        config['rasterFormat'] = 'SQLite'
 
         return config
 
@@ -108,7 +108,7 @@ class SpatialiteWriterTask(WriterTaskBase):
                 self.updateLayerSource(layer.id(), uri.uri(), 'spatialite')
 
     def consolidateRasterLayer(self, layer):
-        pass
+        QgsMessageLog.logMessage(self.tr('Raster layers are currently not supported.', 'QConsolidate', Qgis.Info))
         #~ exportLayer = False
 
         #~ providerType = layer.providerType()
