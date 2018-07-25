@@ -118,7 +118,7 @@ class WriterTaskBase(QgsTask):
 
         self.project.write(self.projectFile)
 
-        return True
+        return self.cleanup()
 
     def finished(self, result):
         if result:
@@ -128,6 +128,9 @@ class WriterTaskBase(QgsTask):
 
     def prepare(self):
         pass
+
+    def cleanup(self):
+        return True
 
     def consolidateProject(self):
         projectFile = QgsProject.instance().fileName()
