@@ -39,6 +39,8 @@ from qgis.core import (Qgis,
                        QgsMessageLog,
                        QgsTask,
                        QgsRasterPipe,
+                       QgsRasterRange,
+                       QgsRasterNuller,
                        QgsRasterFileWriter,
                        QgsRasterDataProvider,
                        QgsVectorFileWriter,
@@ -201,7 +203,21 @@ class WriterTaskBase(QgsTask):
         pipe = QgsRasterPipe()
         if not pipe.set(provider.clone()):
             QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": Cannot set pipe provider.'.format(layer=layer.name())), 'QConsolidate', Qgis.Warning)
-            return
+            return False, None
+
+        nodata = {}
+        for i in range(1, provider.bandCount() + 1):
+            if provider.sourceHasNoDataValue(i):
+                value = provider.sourceNoDataValue(i)
+                nodata[i] = QgsRasterRange(value, value)
+
+        nuller = QgsRasterNuller()
+        for band, value in nodata.items():
+            nuller.setNoData(band, [value])
+
+        if not pipe.insert(1, nuller):
+            QgsMessageLog.logMessage(self.tr('Failed to export layer "{layer}": Cannot set pipe nuller.'.format(layer=layer.name())), 'QConsolidate', Qgis.Warning)
+            return False, None
 
         writer = QgsRasterFileWriter(destinationFile)
         writer.setOutputFormat(outputFormat)
