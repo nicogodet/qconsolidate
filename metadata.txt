@@ -1,9 +1,9 @@
 [general]
 name=QConsolidate
-description=Consolidate QGIS project into one directory
+description=Consolidate all layers from the QGIS project into one directory
 about=Consolidate all project layers into one directory to make it easier to share project with others.
 category=Plugins
-version=0.2.0
+version=1.0.0
 qgisMinimumVersion=3.0
 
 author=Alexander Bruy
