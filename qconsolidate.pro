@@ -1,11 +1,17 @@
 SOURCES = __init__.py \
-          qconsolidate.py \
-          qconsolidatedialog.py \
-          aboutdialog.py \
-          consolidatethread.py
+          qconsolidateplugin.py \
+          gui/qconsolidatedialog.py \
+          gui/aboutdialog.py \
+          gui/directorywriterwidget.py \
+          writers/writerbase.py \
+          writers/copywriter.py \
+          writers/exportwriter.py \
+          writers/geopackagewriter.py \
+          writers/spatialitewriter.py \
+          writers/zipwriter.py
 
 FORMS = ui/qconsolidatedialogbase.ui \
-        ui/aboutdialogbase.ui
+        ui/aboutdialogbase.ui \
+        ui/directorywriterwidgetbase.ui
 
-TRANSLATIONS = i18n/qconsolidate_ru.ts \
-               i18n/qconsolidate_uk.ts
+TRANSLATIONS = i18n/qconsolidate_uk.ts
