@@ -38,6 +38,7 @@ from qgis.core import (Qgis,
                        QgsMapLayer,
                        QgsMessageLog,
                        QgsTask,
+                       QgsProjectArchive,
                        QgsRasterPipe,
                        QgsRasterRange,
                        QgsRasterNuller,
@@ -84,6 +85,7 @@ class WriterTaskBase(QgsTask):
 
         self.project = None
         self.projectFile = None
+        self.projectArchive = None
 
         self.baseDirectory = self.settings['output']
         self.dataDirectory = os.path.join(self.baseDirectory, LAYERS_DIRECTORY)
@@ -118,7 +120,8 @@ class WriterTaskBase(QgsTask):
 
             self.setProgress(int(count * total))
 
-        self.project.write(self.projectFile)
+        self.project.write(self.projectArchive.projectFile())
+        self.projectArchive.zip(self.projectFile)
 
         return self.cleanup()
 
@@ -135,17 +138,29 @@ class WriterTaskBase(QgsTask):
         return True
 
     def consolidateProject(self):
-        projectFile = QgsProject.instance().fileName()
-        fileName = os.path.basename(projectFile)
-        if projectFile:
-            shutil.copy(projectFile, self.baseDirectory)
-            self.projectFile = os.path.join(self.baseDirectory, fileName)
-        else:
-            # FIXME: save project in temporary files?
-            self.projectFile = os.path.join(self.baseDirectory, 'project.qgs')
+        self.projectFile = QgsProject.instance().fileName()
+        if not self.projectFile:
+            # project is not saved yet, save it into destination directory
+            # and then reset file name to prevent consolidated project from
+            # an accidental overwrite
+            self.projectFile = os.path.join(self.baseDirectory, 'project.qgz')
             QgsProject.instance().write(self.projectFile)
+            QgsProject.instance().setFileName(None)
+            QgsProject.instance().setDirty(True)
+        else:
+            # project already has an associated file name, so we store
+            # original file, save project into destination directory and
+            # then restore original file name
+            originalPath = self.projectFile
+            fileName = os.path.splitext(os.path.basename(originalPath))[0]
+            self.projectFile = os.path.join(self.baseDirectory, '{}.qgz'.format(fileName))
+            QgsProject.instance().write(self.projectFile)
+            QgsProject.instance().setFileName(originalPath)
+            QgsProject.instance().setDirty(True)
 
-        self.project = ET.parse(self.projectFile)
+        self.projectArchive = QgsProjectArchive()
+        self.projectArchive.unzip(self.projectFile)
+        self.project = ET.parse(self.projectArchive.projectFile())
 
     def consolidateVectorLayer(self, layer):
         raise NotImplementedError('Needs to be implemented by subclasses.')
