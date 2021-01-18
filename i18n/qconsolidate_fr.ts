@@ -6,7 +6,7 @@
     <message>
         <location filename="../gui/aboutdialog.py" line="57"/>
         <source>About {}</source>
-        <translation>A propos de {}</translation>
+        <translation>À propos de {}</translation>
     </message>
     <message>
         <location filename="../gui/aboutdialog.py" line="61"/>
@@ -60,7 +60,7 @@
     <message>
         <location filename="../writers/copywriter.py" line="145"/>
         <source>Not supported GDAL virtual filesystem layer &quot;{layerType}&quot;</source>
-        <translation type="unfinished">Not supported GDAL virtual filesystem layer &quot;{layerType}&quot;</translation>
+        <translation>Les couches virtuelles GDAL du type &quot;{layerType}&quot; ne sont pas supportées</translation>
     </message>
 </context>
 <context>
@@ -159,7 +159,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../writers/geopackagewriter.py" line="85"/>
         <source>Failed to create database: {message}</source>
-        <translation>Echec lors de la création de la base de donnée : {message}</translation>
+        <translation>Échec lors de la création de la base de donnée : {message}</translation>
     </message>
     <message>
         <location filename="../writers/geopackagewriter.py" line="118"/>
@@ -210,7 +210,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/qconsolidatedialogbase.ui" line="66"/>
         <source>Export layers from remote datasources</source>
-        <translation>Exporter les couches depuis les sources de données distantes</translation>
+        <translation>Exporter les sources de données distantes sous forme de couche</translation>
     </message>
     <message>
         <location filename="../gui/qconsolidatedialog.py" line="51"/>
@@ -233,7 +233,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qconsolidateplugin.py" line="59"/>
         <source>About QConsolidateâ¦</source>
-        <translation>A propos de QConsolidate...</translation>
+        <translation>À propos de QConsolidate...</translation>
     </message>
     <message>
         <location filename="../qconsolidateplugin.py" line="94"/>
@@ -254,24 +254,24 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../writers/spatialitewriter.py" line="80"/>
         <source>&quot;SQLite&quot; driver not found.</source>
-        <translation>Не знайдено драйвер &quot;SQLite&quot;.</translation>
+        <translation>Le pilote &quot;SQLite&quot; n&apos;a pas été trouvé.</translation>
     </message>
     <message>
         <location filename="../writers/spatialitewriter.py" line="85"/>
         <source>Failed to create database: {message}</source>
-        <translation>Не вдалося створити базу даних: {message}</translation>
+        <translation>Échec lors de la création de la base de donnée : {message}</translation>
     </message>
     <message>
         <location filename="../writers/spatialitewriter.py" line="100"/>
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
-        <translation>Шари постачальника даних &quot;{provider}&quot; поки що не підтримуються.</translation>
+        <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
     <message numerus="yes">
         <location filename="../writers/spatialitewriter.py" line="111"/>
         <source>Raster layers are currently not supported.</source>
         <comment>QConsolidate</comment>
         <translation>
-            <numerusform>Растрові шари поки що не підтримуються.</numerusform>
+            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -280,7 +280,7 @@ p, li { white-space: pre-wrap; }
         <source>Plugin layers are currently not supported.</source>
         <comment>QConsolidate</comment>
         <translation>
-            <numerusform>Шари плагінів поки що не підтримуються.</numerusform>
+            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -289,7 +289,7 @@ p, li { white-space: pre-wrap; }
         <source>Mesh layers are currently not supported.</source>
         <comment>QConsolidate</comment>
         <translation>
-            <numerusform>Сіткові шари поки що не підтримуються.</numerusform>
+            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -335,7 +335,7 @@ p, li { white-space: pre-wrap; }
         <source>Failed to zip layers.</source>
         <comment>QConsolidate</comment>
         <translation>
-            <numerusform>Echec lors de l&apos;archivage des couches.</numerusform>
+            <numerusform>Échec lors de l&apos;archivage des couches.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
