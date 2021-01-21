@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<TS version="2.1" language="fr_FR" sourcelanguage="fr">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -34,24 +34,6 @@
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
         <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
-        <location filename="../writers/copywriter.py" line="121"/>
-        <source>Plugin layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <location filename="../writers/copywriter.py" line="124"/>
-        <source>Mesh layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-        </translation>
-    </message>
     <message>
         <location filename="../writers/copywriter.py" line="139"/>
         <source>Failed to parse URI: &quot;{uri}&quot;</source>
@@ -61,6 +43,16 @@
         <location filename="../writers/copywriter.py" line="145"/>
         <source>Not supported GDAL virtual filesystem layer &quot;{layerType}&quot;</source>
         <translation>Les couches virtuelles GDAL du type &quot;{layerType}&quot; ne sont pas supportées</translation>
+    </message>
+    <message>
+        <location filename="../writers/copywriter.py" line="121"/>
+        <source>Plugin layers are currently not supported.</source>
+        <translation>Les couches de plugin ne sont pas supportées pour le moment.</translation>
+    </message>
+    <message>
+        <location filename="../writers/copywriter.py" line="124"/>
+        <source>Mesh layers are currently not supported.</source>
+        <translation>Les maillages ne sont pas supportés pour le moment.</translation>
     </message>
 </context>
 <context>
@@ -99,23 +91,15 @@ p, li { white-space: pre-wrap; }
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
         <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/exportwriter.py" line="106"/>
         <source>Plugin layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-        </translation>
+        <translation>Les couches de plugin ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/exportwriter.py" line="109"/>
         <source>Mesh layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les maillages ne sont pas supportés pour le moment.</translation>
     </message>
 </context>
 <context>
@@ -166,23 +150,15 @@ p, li { white-space: pre-wrap; }
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
         <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/geopackagewriter.py" line="128"/>
         <source>Plugin layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les couches de plugin ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/geopackagewriter.py" line="131"/>
         <source>Mesh layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les maillages ne sont pas supportés pour le moment.</translation>
     </message>
 </context>
 <context>
@@ -193,19 +169,14 @@ p, li { white-space: pre-wrap; }
         <translation>QConsolidate</translation>
     </message>
     <message>
-        <location filename="../ui/qconsolidatedialogbase.ui" line="43"/>
-        <source>Output directory</source>
-        <translation>Dossier cible</translation>
-    </message>
-    <message>
-        <location filename="../gui/qconsolidatedialog.py" line="80"/>
-        <source>Directory exists</source>
-        <translation>Le dossier existe</translation>
-    </message>
-    <message>
         <location filename="../ui/qconsolidatedialogbase.ui" line="36"/>
         <source>Consolidation method</source>
         <translation>Méthode de consolidation</translation>
+    </message>
+    <message>
+        <location filename="../ui/qconsolidatedialogbase.ui" line="43"/>
+        <source>Output directory</source>
+        <translation>Dossier cible</translation>
     </message>
     <message>
         <location filename="../ui/qconsolidatedialogbase.ui" line="66"/>
@@ -216,6 +187,11 @@ p, li { white-space: pre-wrap; }
         <location filename="../gui/qconsolidatedialog.py" line="51"/>
         <source>Select directory</source>
         <translation>Sélectionner un dossier</translation>
+    </message>
+    <message>
+        <location filename="../gui/qconsolidatedialog.py" line="80"/>
+        <source>Directory exists</source>
+        <translation>Le dossier existe</translation>
     </message>
     <message>
         <location filename="../gui/qconsolidatedialog.py" line="80"/>
@@ -231,14 +207,14 @@ p, li { white-space: pre-wrap; }
         <translation>QConsolidate</translation>
     </message>
     <message>
-        <location filename="../qconsolidateplugin.py" line="59"/>
-        <source>About QConsolidateâ¦</source>
-        <translation>À propos de QConsolidate...</translation>
-    </message>
-    <message>
         <location filename="../qconsolidateplugin.py" line="94"/>
         <source>Project consolidated successfully.</source>
         <translation>Projet consolidé avec succès.</translation>
+    </message>
+    <message>
+        <location filename="../qconsolidateplugin.py" line="59"/>
+        <source>About QConsolidate...</source>
+        <translation>À propos de QConsolidate...</translation>
     </message>
 </context>
 <context>
@@ -266,38 +242,26 @@ p, li { white-space: pre-wrap; }
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
         <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/spatialitewriter.py" line="111"/>
         <source>Raster layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les rasters ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/spatialitewriter.py" line="131"/>
         <source>Plugin layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les couches de plugin ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/spatialitewriter.py" line="134"/>
         <source>Mesh layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les maillages ne sont pas supportés pour le moment.</translation>
     </message>
 </context>
 <context>
     <name>WriterBase</name>
     <message>
-        <location filename="../writers/writerbase.py" line="63"/>
+        <location filename="../writers/writerbase.py" line="64"/>
         <source>Base</source>
         <translation>Base</translation>
     </message>
@@ -305,19 +269,24 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>WriterTaskBase</name>
     <message>
-        <location filename="../writers/writerbase.py" line="232"/>
+        <location filename="../writers/writerbase.py" line="246"/>
         <source>Failed to export layer &quot;{layer}&quot;: {message}.</source>
         <translation>Erreur lors de l&apos;export de la couche &quot;{layer}&quot;: {message}.</translation>
     </message>
     <message>
-        <location filename="../writers/writerbase.py" line="206"/>
+        <location filename="../writers/writerbase.py" line="220"/>
         <source>Failed to export layer &quot;{layer}&quot;: Cannot set pipe provider.</source>
         <translation>Erreur lors de l&apos;export de la couche &quot;{layer}&quot;: Cannot set pipe provider.</translation>
     </message>
     <message>
-        <location filename="../writers/writerbase.py" line="220"/>
+        <location filename="../writers/writerbase.py" line="234"/>
         <source>Failed to export layer &quot;{layer}&quot;: Cannot set pipe nuller.</source>
         <translation>Erreur lors de l&apos;export de la couche &quot;{layer}&quot;: Cannot set pipe nuller.</translation>
+    </message>
+    <message>
+        <location filename="../writers/writerbase.py" line="107"/>
+        <source>Consolidating {layer}.</source>
+        <translation>Consolidation de la couche {layer}.</translation>
     </message>
 </context>
 <context>
@@ -330,37 +299,25 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>ZipWriterTask</name>
-    <message numerus="yes">
-        <location filename="../writers/zipwriter.py" line="88"/>
-        <source>Failed to zip layers.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Échec lors de l&apos;archivage des couches.</numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
     <message>
         <location filename="../writers/zipwriter.py" line="128"/>
         <source>Layers from the &quot;{provider}&quot; provider are currently not supported.</source>
         <translation>Les couches du fournisseur &quot;{provider}&quot; ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
+        <location filename="../writers/zipwriter.py" line="88"/>
+        <source>Failed to zip layers.</source>
+        <translation>Échec lors de l&apos;archivage des couches.</translation>
+    </message>
+    <message>
         <location filename="../writers/zipwriter.py" line="142"/>
         <source>Plugin layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les couches de plugin ne sont pas supportées pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les couches de plugin ne sont pas supportées pour le moment.</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <location filename="../writers/zipwriter.py" line="145"/>
         <source>Mesh layers are currently not supported.</source>
-        <comment>QConsolidate</comment>
-        <translation>
-            <numerusform>Les maillages ne sont pas supportés pour le moment.</numerusform>
-            <numerusform></numerusform>
-        </translation>
+        <translation>Les maillages ne sont pas supportés pour le moment.</translation>
     </message>
 </context>
 </TS>
